@@ -17,7 +17,7 @@
 #include <pthread.h>
 #include <ar_track_alvar/AlvarMarkers.h>
 #include <ar_track_alvar/AlvarMarker.h>
-#include <nxr_baxter/ARBlock.h>
+#include <ar_blocks/ARBlock.h>
 
 namespace nxr {
 
@@ -35,6 +35,8 @@ public:
 
 	void createOrderedStack();
 
+	bool pickLargest();
+	
 	static void *updateThread(void *td);
 	std::deque<pthread_t> thread_ids_;
 	pthread_mutex_t ar_blocks_mutex_;

@@ -1,4 +1,4 @@
-#include <nxr_baxter/ARWorldBuilder.h>
+#include <ar_blocks/ARWorldBuilder.h>
 
 namespace nxr {
 
@@ -7,6 +7,22 @@ using namespace std;
 
 static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
 // static const float g_table_position[3] = { 0.608012, 1.21602, 0.60325 };
+
+void ARWorldBuilder::pickLargest()
+{
+	pthread_mutex_lock(&ar_blocks_mutex_);
+	// Find the largest block
+	ARBlock& largest_block;
+	map<unsigned int, ARBlock>::iterator it = ar_blocks_.begin();
+	map<unsigned int, ARBlock>::iterator end = ar_blocks_.end();
+	if(it != end) {
+		largest_block = 
+		for( ; it != ar_blocks_.end(); it++) {
+			if
+		}
+	}
+	pthread_mutex_unlock(&ar_blocks_mutex_);
+}
 
 ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) : cutoff_confidence_(cutoff)
 {
