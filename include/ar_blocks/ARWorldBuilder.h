@@ -12,11 +12,13 @@
 #include <geometry_msgs/Pose.h>
 #include <map>
 #include <deque>
+#include <queue>
 #include <string>
 #include <sstream>
 #include <pthread.h>
 #include <ar_track_alvar/AlvarMarkers.h>
 #include <ar_track_alvar/AlvarMarker.h>
+#include <manipulation_msgs/PlaceLocation.h>
 #include <ar_blocks/ARBlock.h>
 
 namespace nxr {
@@ -33,7 +35,8 @@ public:
 	void arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::ConstPtr& markers_msg);
 	void updateWorld();	
 
-	void createOrderedStack();
+	bool clearStage(); 
+	bool createOrderedStack();
 
 	bool pickLargest();
 	
@@ -45,6 +48,13 @@ public:
 	ros::Publisher collision_object_pub_;
 	ros::Subscriber ar_pose_marker_sub_;
 	std::map<unsigned int,ARBlock> ar_blocks_;
+	stage_area_;
+
+	moveit::planning_interface::MoveGroup left_arm_;
+	moveit::planning_interface::MoveGroup right_arm_;
+	moveit::planning_interface::MoveGroup both_arms_;
+
+	
 	
 	unsigned int cutoff_confidence_;
 };

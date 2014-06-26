@@ -30,6 +30,10 @@ public:
 	ARBlock(float *dims, int id = 0);	
 	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("/base"));	
 
+	std::string getStringId() { std::stringstream sstream; sstream << id_; return sstream.str(); }
+
+	bool operator<(const ARBlock& block_compare) { return dimensions_.x < block_compare.dimensions_.x; }
+
 	geometry_msgs::Pose pose_;
 	unsigned int block_type_; 
 	unsigned int id_;
