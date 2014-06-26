@@ -8,6 +8,14 @@ using namespace std;
 static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
 // static const float g_table_position[3] = { 0.608012, 1.21602, 0.60325 };
 
+map<unsigned int, ARBlock> ARWorldBuilder::getBlocks()
+{
+	pthread_mutex_lock(&ar_blocks_mutex_);
+	map<unsigned int, ARBlock> block_copy = ar_blocks_;
+	pthread_mutex_unlock(&ar_blocks_mutex_);
+	return block_copy;
+}
+
 bool ARWorldBuilder::pickLargest()
 {
 	pthread_mutex_lock(&ar_blocks_mutex_);

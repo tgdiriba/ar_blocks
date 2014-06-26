@@ -30,16 +30,16 @@ class ARWorldBuilder {
 public:
 	ARWorldBuilder(unsigned int cutoff = 0);
 	~ARWorldBuilder();
-	
-	void setupCageEnvironment(std::string planning_frame = std::string("/base"));
-	void arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::ConstPtr& markers_msg);
-	void updateWorld();	
 
+	// Main functionality
 	bool clearStage(); 
 	bool createOrderedStack();
-
 	bool pickLargest();
-	
+
+	unsigned int cutoff_confidence_;
+
+	std::map<unsigned int, ARBlock> getBlocks();
+private:
 	static void *updateThread(void *td);
 	std::deque<pthread_t> thread_ids_;
 	pthread_mutex_t ar_blocks_mutex_;
@@ -48,15 +48,14 @@ public:
 	ros::Publisher collision_object_pub_;
 	ros::Subscriber ar_pose_marker_sub_;
 	std::map<unsigned int,ARBlock> ar_blocks_;
-	stage_area_;
-
+	
 	moveit::planning_interface::MoveGroup left_arm_;
 	moveit::planning_interface::MoveGroup right_arm_;
 	moveit::planning_interface::MoveGroup both_arms_;
-
 	
-	
-	unsigned int cutoff_confidence_;
+	void setupCageEnvironment(std::string planning_frame = std::string("/base"));
+	void arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::ConstPtr& markers_msg);
+	void updateWorld();	
 };
 
 }
