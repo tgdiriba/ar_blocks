@@ -84,7 +84,7 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 void ARWorldBuilder::setupCageEnvironment(string planning_frame)
 {
 	ROS_INFO("Setting up the cage environment...");
-	vector< moveit_msgs::CollisionObject > object_collection(1);
+	vector< moveit_msgs::CollisionObject > object_collection(2);
 
 	planning_interface::MoveGroup left_arm("left_arm");
 	planning_frame = left_arm.getPlanningFrame();
@@ -116,6 +116,27 @@ void ARWorldBuilder::setupCageEnvironment(string planning_frame)
 	
 
 	// Setup the deskspace
+
+	
+	// Setup the test block
+	ROS_INFO("Adding test block to the cage environment, using planning frame %s...", planning_frame.c_str());
+	object_collection[1] = moveit_msgs::CollisionObject();
+	object_collection[1].header.frame_id = planning_frame;	
+	object_collection[1].id = "test_block";
+	
+	primitive_objects[0].type = shape_msgs::SolidPrimitive::BOX;
+	primitive_objects[0].dimensions[0] = 0.063; //0.608012; 
+	primitive_objects[0].dimensions[1] = 0.063; //1.21602; 
+	primitive_objects[0].dimensions[2] = 0.063; //0.60325; 
+	object_collection[1].primitives = primitive_objects;
+
+	// For now this is guesswork on where the center of the table is positioned
+	primitive_object_poses[0].position.x += -(object_collection[0].primitives[0].dimensions[0]/2) + (0.063/2);
+	primitive_object_poses[0].position.y = 0.5842 - (g_table_dimensions[1]/2);	
+	primitive_object_poses[0].position.z += (object_collection[0].primitives[0].dimensions[2]/2) + (0.063/2);
+	primitive_object_poses[0].orientation.w = 1.0;
+	object_collection[1].primitive_poses = primitive_object_poses;	
+	object_collection[1].operation = moveit_msgs::CollisionObject::ADD;
 	
 	 
 	for( vector< moveit_msgs::CollisionObject >::iterator object = object_collection.begin(); object != object_collection.end(); object++ ) {
@@ -124,6 +145,17 @@ void ARWorldBuilder::setupCageEnvironment(string planning_frame)
 	
 	ROS_INFO("Waiting for published colllision objects to be registered...");
 	ros::Duration(2.0).sleep();
+
+
+	// Testing pick and place
+
+	bool picked = left_arm.pick("test_block");
+	ros::Duration(10.0).sleep();
+	bool placed = left_arm.place("test_block");
+	ros::Duration(10.0).sleep();
+
+	ROS_INFO("Pick and place %s.", (picked and placed) ? ("succeeded") : ("failed"));
+	
 }
 
 void ARWorldBuilder::updateWorld()
