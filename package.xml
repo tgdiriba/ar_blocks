@@ -28,6 +28,7 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>baxter_core_msgs</build_depend>
   <build_depend>skeletonmsgs_nu</build_depend>
+	<build_depend>skeletontracker_nu</build_depend>
   <build_depend>nxr_baxter_msgs</build_depend>
 
   <build_depend>baxter_interface</build_depend>
@@ -75,6 +76,7 @@
   <run_depend>shape_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>baxter_core_msgs</run_depend>
+	<run_depend>skeletontracker_nu</run_depend>
   <run_depend>skeletonmsgs_nu</run_depend>
   <run_depend>nxr_baxter_msgs</run_depend>
 

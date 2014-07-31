@@ -17,7 +17,7 @@
 #include <pthread.h>
 #include <ar_track_alvar/AlvarMarkers.h>
 #include <ar_track_alvar/AlvarMarker.h>
-#include <nxr_baxter/ARBlock.h>
+#include <ar_blocks/ARBlock.h>
 
 namespace nxr {
 

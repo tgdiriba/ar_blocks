@@ -1,4 +1,4 @@
-#include <nxr_baxter/ARWorldBuilder.h>
+#include <ar_blocks/ARWorldBuilder.h>
 
 namespace nxr {
 

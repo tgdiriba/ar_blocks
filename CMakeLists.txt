@@ -19,6 +19,7 @@ find_package(catkin
   trajectory_msgs
   baxter_core_msgs
   skeletonmsgs_nu
+	skeletontracker_nu
   
   baxter_interface
 
@@ -42,6 +43,7 @@ find_package(catkin
 	moveit_ros_warehouse
 	moveit_setup_assistant
 	moveit_simple_controller_manager
+	ar_track_alvar
 
   tf
   dynamic_reconfigure
@@ -52,6 +54,64 @@ find_package(catkin
 catkin_python_setup()
 
 # generate_messages(DEPENDENCIES sensor_msgs std_msgs geometry_msgs control_msgs trajectory_msgs baxter_core_msgs skeletonmsgs_nu)
+
+include_directories(include ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} )
+
+add_library(ar_blocks
+	src/ARBlock.cpp
+	src/ARWorldBuilder.cpp
+)
+target_link_libraries(ar_blocks ${catkin_LIBRARIES})
+add_dependencies(ar_blocks moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(webcam_video_publisher nodes/webcam_video_publisher.cpp)
+target_link_libraries(webcam_video_publisher  
+	${catkin_LIBRARIES}
+
+#	opencv_core
+#	opencv_imgproc
+#	opencv_highgui
+#	opencv_ml
+#	opencv_video
+#	opencv_features2d
+#	opencv_calib3d
+#	opencv_objdetect
+#	opencv_contrib
+#	opencv_legacy
+#	opencv_stitching
+
+	pthread
+ 
+) 
+add_dependencies(webcam_video_publisher moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
+
+add_executable(moveit_ar_environment nodes/moveit_ar_environment.cpp)
+target_link_libraries(moveit_ar_environment
+	ar_blocks
+	${catkin_LIBRARIES}
+	
+	# opencv_core
+	# opencv_imgproc
+	# opencv_highgui
+	# opencv_ml
+	# opencv_video
+	# opencv_features2d
+	# opencv_calib3d
+	# opencv_objdetect
+	# opencv_contrib
+	# opencv_legacy
+	# opencv_stitching
+
+	pthread
+
+)
+add_dependencies(moveit_ar_environment moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
+
+generate_messages(DEPENDENCIES
+	ar_track_alvar
+	moveit_msgs
+	skeletonmsgs_nu
+)
 
 catkin_package(
 	INCLUDE_DIRS include
@@ -99,55 +159,3 @@ catkin_package(
   cv_bridge
 	image_transport
 )
-
-include_directories(include ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} )
-
-add_library(ar_blocks
-	src/ARBlock.cpp
-	src/ARWorldBuilder.cpp
-)
-target_link_libraries(ar_blocks ${catkin_LIBRARIES})
-add_dependencies(ar_blocks moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
-
-add_executable(webcam_video_publisher nodes/webcam_video_publisher.cpp)
-target_link_libraries(webcam_video_publisher  
-	${catkin_LIBRARIES}
-
-#	opencv_core
-#	opencv_imgproc
-#	opencv_highgui
-#	opencv_ml
-#	opencv_video
-#	opencv_features2d
-#	opencv_calib3d
-#	opencv_objdetect
-#	opencv_contrib
-#	opencv_legacy
-#	opencv_stitching
-
-	pthread
- 
-) 
-add_dependencies(webcam_video_publisher moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
-
-add_executable(moveit_ar_environment nodes/moveit_ar_environment.cpp)
-target_link_libraries(moveit_ar_environment
-	ar_blocks
-	${catkin_LIBRARIES}
-	
-	# opencv_core
-	# opencv_imgproc
-	# opencv_highgui
-	# opencv_ml
-	# opencv_video
-	# opencv_features2d
-	# opencv_calib3d
-	# opencv_objdetect
-	# opencv_contrib
-	# opencv_legacy
-	# opencv_stitching
-
-	pthread
-
-)
-add_dependencies(moveit_ar_environment moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
