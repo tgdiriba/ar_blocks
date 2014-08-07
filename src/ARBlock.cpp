@@ -10,21 +10,6 @@ ARBlock::ARBlock(unsigned int b_type) : block_type_(b_type)
 	pose_.orientation.w = 1.0;
 
 	// Designate the block type
-	/*switch(block_type_) {
-		case BLOCK_A:	{
-			dimensions_.x = dimensions_.y = dimensions_.z = 0.063;
-		}
-		case BLOCK_B:	{
-			dimensions_.x = dimensions_.y = dimensions_.z = 0.051;
-		}
-		case BLOCK_C:	{
-			dimensions_.x = dimensions_.y = dimensions_.z = 0.0445;
-		}
-		default:	{
-			dimensions_.x = dimensions_.y = dimensions_.z = 0.063;
-		}
-	}*/
-	
 	if(block_type_ < BLOCK_NUM) 
 		dimensions_.x = dimensions_.y = dimensions_.z = g_block_sizes[block_type_];
 }

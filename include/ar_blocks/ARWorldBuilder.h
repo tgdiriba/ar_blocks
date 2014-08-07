@@ -45,8 +45,15 @@ public:
 	std::map<unsigned int,ARBlock> ar_blocks_;
 	
 	unsigned int cutoff_confidence_;
+
+	// MoveIt! Tests
+	void runAllTests();
+	void armMovementTest();	
+	void endpointControlTest();
+	void gripperControlTest();
+
 };
 
-}
+} // namespace nxr
 
 #endif

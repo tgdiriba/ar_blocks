@@ -149,12 +149,12 @@ void ARWorldBuilder::setupCageEnvironment(string planning_frame)
 
 	// Testing pick and place
 
-	bool picked = left_arm.pick("test_block");
+	/*bool picked = left_arm.pick("test_block");
 	ros::Duration(10.0).sleep();
 	bool placed = left_arm.place("test_block");
 	ros::Duration(10.0).sleep();
 
-	ROS_INFO("Pick and place %s.", (picked and placed) ? ("succeeded") : ("failed"));
+	ROS_INFO("Pick and place %s.", (picked and placed) ? ("succeeded") : ("failed"));*/
 	
 }
 
@@ -168,4 +168,102 @@ void ARWorldBuilder::updateWorld()
 	}
 }
 
+void ARWorldBuilder::runAllTests()
+{
+	armMovementTest();
+	endpointControlTest();
+	gripperControlTest();
 }
+
+void ARWorldBuilder::armMovementTest()
+{
+	planning_interface::MoveGroup left_arm("left_arm");
+	planning_interface::MoveGroup right_arm("right_arm");
+	
+	cout << endl << endl << "Initiating the Arm Movement Tests..." << endl;
+	
+	vector<string> left_joint_names, right_joint_names;
+	left_joint_names = left_arm.getJoints();
+	right_joint_names = right_arm.getJoints();
+
+	cout << endl << "MoveGroup(left_arm)";
+	cout << endl << "Validating left arm joints:";
+	for(int i = 0; i < left_joint_names.size(); i++) {
+		cout << endl << "\t" << left_joint_names[i];
+	}
+	
+	cout << endl << "Validating left endeffector registration: ";	
+	string left_endeffector = left_arm.getEndEffectorLink();
+	cout << "left endeffector " << ((left_endeffector == "") ? string("invalid") : string("valid")) << endl;
+
+
+	cout << endl << "MoveGroup(right_arm)";
+	cout << endl << "Validating right arm joints:";
+	for(int i = 0; i < right_joint_names.size(); i++) {
+		cout << endl << "\t" << right_joint_names[i];
+	}
+
+	cout << endl << "Validating right endeffector registration: ";	
+	string right_endeffector = right_arm.getEndEffectorLink();
+	cout << "right endeffector " << ((right_endeffector == "") ? ("invalid") : ("valid")) << endl;
+
+	char state = 'n';
+	cout << endl << "Testing arm planning and execution pipeline...setting random joints.";
+	cout << endl << "Continue (y/n)? ";
+	cin >> state;
+	vector<double> left_joint_values, right_joint_values;
+	if(state == 'y') {
+		left_joint_values = left_arm.getRandomJointValues();
+		right_joint_values = right_arm.getRandomJointValues();
+		cout << endl << "Moving left arm...";
+		left_arm.setJointValueTarget(left_joint_values);
+		cout << endl << "Continue (y/n)? ";
+		cin >> state;
+		if(state == 'y') {
+			cout << endl << "Moving right arm...";
+			right_arm.setJointValueTarget(right_joint_values);
+		}
+	}
+	
+}
+
+void ARWorldBuilder::endpointControlTest()
+{
+	planning_interface::MoveGroup left_hand("left_hand");
+	planning_interface::MoveGroup right_hand("right_hand");
+	
+	cout << endl << endl << "Initiating the Hand/Endeffector Movement Tests..." << endl;
+	
+	string left_endeffector = left_hand.getEndEffectorLink();
+	string right_endeffector = right_hand.getEndEffectorLink();
+
+	if(left_endeffector == "" || right_endeffector == "") {
+		cout << endl << "Failed to obtain the " << ((left_endeffector == "") ? "left and " : "") << ((right_endeffector == "") ? "right" : "") << "end effeector links"; 
+		return;
+	}
+
+	char state = 'n';
+	cout << endl << "Testing endeffector pose control...setting random pose.";
+	cout <<  "Continue (y/n)? ";
+	cin >> state;
+	if(state == 'y') {
+		cout << endl << "Moving to left endeffector pose...";
+		geometry_msgs::PoseStamped left_pose = left_hand.getRandomPose();
+		cout << endl << ((left_hand.setPoseTarget(left_pose)) ? "Successfully " : "Could not ") << "set the pose target.";
+		cout << endl << "Continue (y/n)? ";
+		cin >> state;
+		if(state == 'y') {
+			cout << endl << "Moving to right endeffector pose...";
+			geometry_msgs::PoseStamped right_pose = right_hand.getRandomPose();
+			cout << endl << ((right_hand.setPoseTarget(right_pose)) ? "Successfully " : "Could not ") << " set the pose target";
+		}
+	}
+	
+}
+
+void ARWorldBuilder::gripperControlTest()
+{
+	
+}
+
+} // namespace nxr
