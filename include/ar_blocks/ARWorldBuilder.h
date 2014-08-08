@@ -9,7 +9,7 @@
 #include <moveit_msgs/PlanningSceneComponents.h>
 #include <moveit_simple_grasps/simple_grasps.h>
 #include <moveit_simple_grasps/grasp_data.h>
-#include <moveit_simple_grasps/visual_tools.h>
+#include <moveit_visual_tools/visual_tools.h>
 #include <std_msgs/Header.h>
 #include <shape_msgs/SolidPrimitive.h>
 #include <geometry_msgs/Pose.h>
@@ -32,12 +32,12 @@ public:
 	ARWorldBuilder(unsigned int cutoff = 0);
 	~ARWorldBuilder();
 	
-	void setupCageEnvironment(std::string planning_frame = std::string("/base"));
+	void setupCageEnvironment();
 	void arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::ConstPtr& markers_msg);
 	void updateWorld();	
-
+	
 	void createOrderedStack();
-
+	
 	static void *updateThread(void *td);
 	std::deque<pthread_t> thread_ids_;
 	pthread_mutex_t ar_blocks_mutex_;
@@ -48,13 +48,26 @@ public:
 	std::map<unsigned int,ARBlock> ar_blocks_;
 	
 	unsigned int cutoff_confidence_;
-
+	
+	// MoveIt! Definitions
+	moveit::planning_interface::MoveGroup left_arm_;
+	moveit::planning_interface::MoveGroup right_arm_;
+	moveit::planning_interface::MoveGroup left_hand_;
+	moveit::planning_interface::MoveGroup right_hand_;
+	std::string planning_frame_;
+	
+	// MoveIt! Simple Grasps and Visual Tools
+	moveit_simple_grasps::SimpleGraspsPtr simple_grasps_;
+	moveit_simple_grasps::GraspData grasp_data_;
+	moveit_visual_tools::VisualToolsPtr visual_tools_;
+	
 	// MoveIt! Tests
 	void runAllTests();
 	void armMovementTest();	
 	void endpointControlTest();
 	void gripperControlTest();
-
+	void visualizeGraspsTest();
+	
 };
 
 } // namespace nxr

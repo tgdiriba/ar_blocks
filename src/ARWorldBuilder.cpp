@@ -8,13 +8,26 @@ using namespace std;
 static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
 // static const float g_table_position[3] = { 0.608012, 1.21602, 0.60325 };
 
-ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) : cutoff_confidence_(cutoff)
+ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) : 
+	nh_("~"),
+	cutoff_confidence_(cutoff),
+	left_arm_("left_arm"),
+	right_arm_("right_arm"),
+	left_hand_("left_hand"),
+	right_hand_("right_hand"),
+	planning_frame_("/base")
 {
 	ROS_INFO("Constructing ARWorldBuilder...");
 	
 	collision_object_pub_ = nh_.advertise<moveit_msgs::CollisionObject>("collision_object", 30);
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
 	setupCageEnvironment();
+
+	// Setup moveit_simple_grasps
+	visual_tools_.reset( new moveit_visual_tools::VisualTools("base") );
+	if(!grasp_data_.loadRobotGraspData(nh_, "left_hand"))
+		ROS_ERROR("Failed to load Baxter's grasp data.");
+	simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps(visual_tools_) );
 
 	// Initialize threads
 	pthread_mutex_init(&ar_blocks_mutex_, NULL);
@@ -81,18 +94,15 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 
 }
 
-void ARWorldBuilder::setupCageEnvironment(string planning_frame)
+void ARWorldBuilder::setupCageEnvironment()
 {
 	ROS_INFO("Setting up the cage environment...");
 	vector< moveit_msgs::CollisionObject > object_collection(2);
 
-	planning_interface::MoveGroup left_arm("left_arm");
-	planning_frame = left_arm.getPlanningFrame();
-
 	// Setup the table
-	ROS_INFO("Adding table to the cage environment, using planning frame %s...", planning_frame.c_str());
+	ROS_INFO("Adding table to the cage environment, using planning frame %s...", planning_frame_.c_str());
 	object_collection[0] = moveit_msgs::CollisionObject();
-	object_collection[0].header.frame_id = planning_frame;	
+	object_collection[0].header.frame_id = planning_frame_;	
 	object_collection[0].id = "table";
 	
 	vector < shape_msgs::SolidPrimitive > primitive_objects(1);
@@ -119,9 +129,9 @@ void ARWorldBuilder::setupCageEnvironment(string planning_frame)
 
 	
 	// Setup the test block
-	ROS_INFO("Adding test block to the cage environment, using planning frame %s...", planning_frame.c_str());
+	ROS_INFO("Adding test block to the cage environment, using planning frame %s...", planning_frame_.c_str());
 	object_collection[1] = moveit_msgs::CollisionObject();
-	object_collection[1].header.frame_id = planning_frame;	
+	object_collection[1].header.frame_id = planning_frame_;	
 	object_collection[1].id = "test_block";
 	
 	primitive_objects[0].type = shape_msgs::SolidPrimitive::BOX;
@@ -146,16 +156,6 @@ void ARWorldBuilder::setupCageEnvironment(string planning_frame)
 	ROS_INFO("Waiting for published colllision objects to be registered...");
 	ros::Duration(2.0).sleep();
 
-
-	// Testing pick and place
-
-	/*bool picked = left_arm.pick("test_block");
-	ros::Duration(10.0).sleep();
-	bool placed = left_arm.place("test_block");
-	ros::Duration(10.0).sleep();
-
-	ROS_INFO("Pick and place %s.", (picked and placed) ? ("succeeded") : ("failed"));*/
-	
 }
 
 void ARWorldBuilder::updateWorld()
@@ -168,23 +168,44 @@ void ARWorldBuilder::updateWorld()
 	}
 }
 
+
 void ARWorldBuilder::runAllTests()
 {
 	armMovementTest();
 	endpointControlTest();
 	gripperControlTest();
+	visualizeGraspsTest();
+}
+
+void ARWorldBuilder::visualizeGraspsTest()
+{
+	cout << endl << "Initiating the Grasp Visualization Tests..." << endl;
+
+	pthread_mutex_lock(&ar_blocks_mutex_);
+
+	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
+	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
+	for( ; it != end; it++ ) {
+		vector<moveit_msgs::Grasp> grasps;
+		simple_grasps_->generateBlockGrasps( it->second.pose_, grasp_data_, grasps );
+		visual_tools_->publishAnimatedGrasps( grasps, grasp_data_.ee_parent_link_ );
+	}
+	
+	pthread_mutex_unlock(&ar_blocks_mutex_);
+
+	char state = 'n';
+	cout << endl << "Finished publishing animated grasps.";
+	cout << endl << "Press any key to continue...";
+	cin >> state;
 }
 
 void ARWorldBuilder::armMovementTest()
 {
-	planning_interface::MoveGroup left_arm("left_arm");
-	planning_interface::MoveGroup right_arm("right_arm");
-	
 	cout << endl << endl << "Initiating the Arm Movement Tests..." << endl;
 	
 	vector<string> left_joint_names, right_joint_names;
-	left_joint_names = left_arm.getJoints();
-	right_joint_names = right_arm.getJoints();
+	left_joint_names = left_arm_.getJoints();
+	right_joint_names = right_arm_.getJoints();
 
 	cout << endl << "MoveGroup(left_arm)";
 	cout << endl << "Validating left arm joints:";
@@ -193,7 +214,7 @@ void ARWorldBuilder::armMovementTest()
 	}
 	
 	cout << endl << "Validating left endeffector registration: ";	
-	string left_endeffector = left_arm.getEndEffectorLink();
+	string left_endeffector = left_arm_.getEndEffectorLink();
 	cout << "left endeffector " << ((left_endeffector == "") ? string("invalid") : string("valid")) << endl;
 
 
@@ -204,7 +225,7 @@ void ARWorldBuilder::armMovementTest()
 	}
 
 	cout << endl << "Validating right endeffector registration: ";	
-	string right_endeffector = right_arm.getEndEffectorLink();
+	string right_endeffector = right_arm_.getEndEffectorLink();
 	cout << "right endeffector " << ((right_endeffector == "") ? ("invalid") : ("valid")) << endl;
 
 	char state = 'n';
@@ -213,15 +234,15 @@ void ARWorldBuilder::armMovementTest()
 	cin >> state;
 	vector<double> left_joint_values, right_joint_values;
 	if(state == 'y') {
-		left_joint_values = left_arm.getRandomJointValues();
-		right_joint_values = right_arm.getRandomJointValues();
+		left_joint_values = left_arm_.getRandomJointValues();
+		right_joint_values = right_arm_.getRandomJointValues();
 		cout << endl << "Moving left arm...";
-		left_arm.setJointValueTarget(left_joint_values);
+		left_arm_.setJointValueTarget(left_joint_values);
 		cout << endl << "Continue (y/n)? ";
 		cin >> state;
 		if(state == 'y') {
 			cout << endl << "Moving right arm...";
-			right_arm.setJointValueTarget(right_joint_values);
+			right_arm_.setJointValueTarget(right_joint_values);
 		}
 	}
 	
@@ -229,13 +250,13 @@ void ARWorldBuilder::armMovementTest()
 
 void ARWorldBuilder::endpointControlTest()
 {
-	planning_interface::MoveGroup left_hand("left_hand");
-	planning_interface::MoveGroup right_hand("right_hand");
+	planning_interface::MoveGroup left_hand_("left_hand");
+	planning_interface::MoveGroup right_hand_("right_hand");
 	
 	cout << endl << endl << "Initiating the Hand/Endeffector Movement Tests..." << endl;
 	
-	string left_endeffector = left_hand.getEndEffectorLink();
-	string right_endeffector = right_hand.getEndEffectorLink();
+	string left_endeffector = left_hand_.getEndEffectorLink();
+	string right_endeffector = right_hand_.getEndEffectorLink();
 
 	if(left_endeffector == "" || right_endeffector == "") {
 		cout << endl << "Failed to obtain the " << ((left_endeffector == "") ? "left and " : "") << ((right_endeffector == "") ? "right" : "") << "end effeector links"; 
@@ -248,14 +269,14 @@ void ARWorldBuilder::endpointControlTest()
 	cin >> state;
 	if(state == 'y') {
 		cout << endl << "Moving to left endeffector pose...";
-		geometry_msgs::PoseStamped left_pose = left_hand.getRandomPose();
-		cout << endl << ((left_hand.setPoseTarget(left_pose)) ? "Successfully " : "Could not ") << "set the pose target.";
+		geometry_msgs::PoseStamped left_pose = left_hand_.getRandomPose();
+		cout << endl << ((left_hand_.setPoseTarget(left_pose)) ? "Successfully " : "Could not ") << "set the pose target.";
 		cout << endl << "Continue (y/n)? ";
 		cin >> state;
 		if(state == 'y') {
 			cout << endl << "Moving to right endeffector pose...";
-			geometry_msgs::PoseStamped right_pose = right_hand.getRandomPose();
-			cout << endl << ((right_hand.setPoseTarget(right_pose)) ? "Successfully " : "Could not ") << " set the pose target";
+			geometry_msgs::PoseStamped right_pose = right_hand_.getRandomPose();
+			cout << endl << ((right_hand_.setPoseTarget(right_pose)) ? "Successfully " : "Could not ") << " set the pose target";
 		}
 	}
 	

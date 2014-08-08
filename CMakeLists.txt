@@ -42,6 +42,7 @@ find_package(catkin
 
 	ar_track_alvar
 	moveit_simple_grasps
+	baxter_pick_place
 
   tf
   dynamic_reconfigure
