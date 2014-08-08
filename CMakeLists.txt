@@ -16,11 +16,7 @@ find_package(catkin
   geometry_msgs
 	shape_msgs
   control_msgs
-  trajectory_msgs
   baxter_core_msgs
-  skeletonmsgs_nu
-	skeletontracker_nu
-  
   baxter_interface
 
 	moveit_commander
@@ -43,7 +39,9 @@ find_package(catkin
 	moveit_ros_warehouse
 	moveit_setup_assistant
 	moveit_simple_controller_manager
+
 	ar_track_alvar
+	moveit_simple_grasps
 
   tf
   dynamic_reconfigure
@@ -98,11 +96,8 @@ catkin_package(
   geometry_msgs
 	shape_msgs
   control_msgs
-  trajectory_msgs
   baxter_core_msgs
-  skeletonmsgs_nu
   message_runtime
-  
   baxter_interface
 
 	moveit_commander
@@ -125,6 +120,9 @@ catkin_package(
 	moveit_ros_warehouse
 	moveit_setup_assistant
 	moveit_simple_controller_manager
+
+	ar_track_alvar
+	moveit_simple_grasps
 
   tf
   dynamic_reconfigure

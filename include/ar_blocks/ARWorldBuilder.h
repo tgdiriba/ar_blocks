@@ -7,6 +7,9 @@
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit_msgs/PlanningSceneComponents.h>
+#include <moveit_simple_grasps/simple_grasps.h>
+#include <moveit_simple_grasps/grasp_data.h>
+#include <moveit_simple_grasps/visual_tools.h>
 #include <std_msgs/Header.h>
 #include <shape_msgs/SolidPrimitive.h>
 #include <geometry_msgs/Pose.h>

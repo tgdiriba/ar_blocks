@@ -20,15 +20,12 @@
   <build_depend>actionlib</build_depend>
 
   <build_depend>message_generation</build_depend>
-  <build_depend>trajectory_msgs</build_depend>
   <build_depend>control_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>shape_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>baxter_core_msgs</build_depend>
-  <build_depend>skeletonmsgs_nu</build_depend>
-	<build_depend>skeletontracker_nu</build_depend>
   <build_depend>nxr_baxter_msgs</build_depend>
 
   <build_depend>baxter_interface</build_depend>
@@ -54,6 +51,9 @@
 	<build_depend>moveit_ros_warehouse</build_depend>
 	<build_depend>moveit_setup_assistant</build_depend>
 	<build_depend>moveit_simple_controller_manager</build_depend>
+
+	<build_depend>moveit_simple_grasps</build_depend>
+	<build_depend>ar_track_alvar</build_depend>
   
 	<build_depend>OpenCV</build_depend>
 	<build_depend>tf</build_depend>
@@ -69,15 +69,12 @@
   <run_depend>actionlib</run_depend>
 
   <run_depend>message_runtime</run_depend>
-  <run_depend>trajectory_msgs</run_depend>
   <run_depend>control_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>shape_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>baxter_core_msgs</run_depend>
-	<run_depend>skeletontracker_nu</run_depend>
-  <run_depend>skeletonmsgs_nu</run_depend>
   <run_depend>nxr_baxter_msgs</run_depend>
 
   <run_depend>baxter_interface</run_depend>
@@ -104,6 +101,9 @@
 	<run_depend>moveit_ros_warehouse</run_depend>
 	<run_depend>moveit_setup_assistant</run_depend>
 	<run_depend>moveit_simple_controller_manager</run_depend>
+
+	<run_depend>moveit_simple_grasps</run_depend>
+	<run_depend>ar_track_alvar</run_depend>
 
 	<run_depend>OpenCV</run_depend>
   <run_depend>tf</run_depend>
