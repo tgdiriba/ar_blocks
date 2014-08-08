@@ -1,0 +1,30 @@
+<launch>
+
+	<!--rosparam param="robot_description" command="load" file="$(find ar_blocks)/urdf/baxter.urdf" /-->
+
+	<!--node name="$(anon joint_trajectory_action_server)" pkg="baxter_interface" type="joint_trajectory_action_server.py" respawn="true" /-->
+	 
+	<node name="$(anon enable_robot)" pkg="baxter_tools" type="enable_robot.py" args="-e" />
+  
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="/use_gui" value="false"/>
+  </node>
+  
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
+
+  <include file="$(find baxter_moveit_config)/launch/move_group.launch">
+    <arg name="allow_trajectory_execution" value="true"/>
+  </include>
+
+  <!-- <include file="$(find baxter_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="config" value="true"/>
+  </include> -->
+	
+	<!--node name="gripper_state_translator" pkg="ar_blocks" type="gripper_state_translator" respawn="false" /--> 
+	<node name="moveit_ar_environment" pkg="ar_blocks" type="moveit_ar_environment" respawn="false" /> 
+
+</launch>
