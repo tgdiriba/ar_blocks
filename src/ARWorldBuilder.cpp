@@ -216,8 +216,7 @@ void ARWorldBuilder::armMovementTest()
 	cout << endl << "Validating left endeffector registration: ";	
 	string left_endeffector = left_arm_.getEndEffectorLink();
 	cout << "left endeffector " << ((left_endeffector == "") ? string("invalid") : string("valid")) << endl;
-
-
+	
 	cout << endl << "MoveGroup(right_arm)";
 	cout << endl << "Validating right arm joints:";
 	for(int i = 0; i < right_joint_names.size(); i++) {

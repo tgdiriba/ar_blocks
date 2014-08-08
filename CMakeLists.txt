@@ -68,13 +68,13 @@ target_link_libraries(webcam_video_publisher
 ) 
 add_dependencies(webcam_video_publisher ar_blocks_msgs_generate_message_cpp)
 
-add_executable(moveit_ar_environment nodes/moveit_ar_environment.cpp)
-target_link_libraries(moveit_ar_environment
+add_executable(ar_blocks_environment nodes/ar_blocks_environment.cpp)
+target_link_libraries(ar_blocks_environment
 	${catkin_libraries}
 	pthread
 	ar_blocks
 )
-add_dependencies(moveit_ar_environment moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
+add_dependencies(ar_blocks_environment moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
 
 add_executable(gripper_state_translator nodes/gripper_state_translator.cpp)
 target_link_libraries(gripper_state_translator

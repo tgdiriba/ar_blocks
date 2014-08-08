@@ -25,6 +25,6 @@
   </include> -->
 	
 	<!--node name="gripper_state_translator" pkg="ar_blocks" type="gripper_state_translator" respawn="false" /--> 
-	<node name="moveit_ar_environment" pkg="ar_blocks" type="moveit_ar_environment" respawn="false" /> 
+	<node name="ar_blocks_environment" pkg="ar_blocks" type="ar_blocks_environment" respawn="false" /> 
 
 </launch>
