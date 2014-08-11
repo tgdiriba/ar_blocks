@@ -20,6 +20,10 @@
 #include <pthread.h>
 #include <ar_track_alvar/AlvarMarkers.h>
 #include <ar_track_alvar/AlvarMarker.h>
+#include <ar_track_alvar/Filter.h>
+#include <ar_track_alvar/Kalman.h>
+#include <ar_track_alvar/Platform.h>
+#include <ar_track_alvar/AlvarException.h>
 #include <ar_blocks/ARBlock.h>
 
 namespace nxr {
@@ -46,6 +50,13 @@ public:
 	ros::Publisher collision_object_pub_;
 	ros::Subscriber ar_pose_marker_sub_;
 	std::map<unsigned int,ARBlock> ar_blocks_;
+
+	// Filters
+	std::map<unsigned int,alvar::KalmanSensor> ar_blocks_filtered_;
+	std::map<unsigned int,alvar::Kalman> ar_blocks_kalman_;
+	std::map<unsigned int,unsigned long long> ar_blocks_timestamps_;
+	void addBaseKalmanFilter(unsigned int);
+	void filterBlocks();
 	
 	unsigned int cutoff_confidence_;
 	

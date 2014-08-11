@@ -2,6 +2,7 @@
 
 namespace nxr {
 
+using namespace alvar;
 using namespace moveit;
 using namespace std;
 
@@ -29,6 +30,8 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 		ROS_ERROR("Failed to load Baxter's grasp data.");
 	simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps(visual_tools_) );
 
+	// Configure the Kalman Filter
+
 	// Initialize threads
 	pthread_mutex_init(&ar_blocks_mutex_, NULL);
 	thread_ids_.push_back( pthread_t() );
@@ -49,6 +52,58 @@ ARWorldBuilder::~ARWorldBuilder()
 	
 	pthread_mutex_destroy(&ar_blocks_mutex_);
 	ROS_INFO("All cleaned up.");
+}
+
+void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
+{
+	// Setup the pose's positional filter
+	ar_blocks_filtered_.insert(pair<unsigned int, KalmanSensor>(block_id,KalmanSensor(6,3)));
+	ar_blocks_kalman_.insert(pair<unsigned int, Kalman>(block_id,Kalman(6)));
+	/*ar_blocks_filtered_[block_id] = KalmanSensor(6,3);
+	ar_blocks_kalman_[block_id] = Kalman(6);*/
+	
+	cvZero(ar_blocks_filtered_[block_id].H);
+	cvmSet(ar_blocks_filtered_[block_id].H,0,0,1);
+	cvmSet(ar_blocks_filtered_[block_id].H,1,1,1);
+	cvmSet(ar_blocks_filtered_[block_id].H,2,2,1);
+	
+	cvSetIdentity(ar_blocks_filtered_[block_id].R,cvScalar(10));
+	
+	cvSetIdentity(ar_blocks_kalman_[block_id].F);
+	cvmSet(ar_blocks_kalman_[block_id].F,0,3,1);
+	cvmSet(ar_blocks_kalman_[block_id].F,1,4,1);
+	cvmSet(ar_blocks_kalman_[block_id].F,2,5,1);
+
+	cvmSet(ar_blocks_kalman_[block_id].Q,0,0,0.0001);
+	cvmSet(ar_blocks_kalman_[block_id].Q,1,1,0.0001);
+	cvmSet(ar_blocks_kalman_[block_id].Q,2,2,0.0001);
+	cvmSet(ar_blocks_kalman_[block_id].Q,3,3,0.00001);
+	cvmSet(ar_blocks_kalman_[block_id].Q,4,4,0.00001);
+	cvmSet(ar_blocks_kalman_[block_id].Q,5,5,0.00001);
+	
+	cvSetIdentity(ar_blocks_kalman_[block_id].P,cvScalar(100));
+
+	/* cvmSet(ar_blocks_filtered_[block_id].z,0,0,x);
+	cvmSet(ar_blocks_filtered_[block_id].z,1,0,y);
+	cvmSet(ar_blocks_filtered_[block_id].z,2,0,z);*/
+	
+	// Setup the pose's orientational filter
+}
+
+void ARWorldBuilder::filterBlocks()
+{
+	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
+	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
+	for( ; it != end; it++ ) {
+		cvmSet(ar_blocks_filtered_[it->first].z,0,0,it->second.pose_.position.x);
+		cvmSet(ar_blocks_filtered_[it->first].z,1,0,it->second.pose_.position.y);
+		cvmSet(ar_blocks_filtered_[it->first].z,2,0,it->second.pose_.position.z);
+	
+		// Modify the time stamps and perform predict and update
+		unsigned long long time_now = ros::Time::now().toNSec();
+		ar_blocks_kalman_[it->first].predict_update(&(ar_blocks_filtered_[it->first]), ar_blocks_timestamps_[it->first] - time_now);
+		ar_blocks_timestamps_[it->first] = time_now;
+	}
 }
 
 void ARWorldBuilder::createOrderedStack()
@@ -83,13 +138,21 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 {
 
 	pthread_mutex_lock(&ar_blocks_mutex_);
+
 	for(int i = 0; i < markers_msg->markers.size(); i++) {
 		// Use a cutoff confidence, by default this is 0
 		if( markers_msg->markers[i].confidence >= cutoff_confidence_ ) {
 			// Eventually differentiate the different marker types
+			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end())
+				addBaseKalmanFilter(markers_msg->markers[i].id);
+			
 			ar_blocks_[ markers_msg->markers[i].id ].pose_ = markers_msg->markers[i].pose.pose;
 		}
 	}
+	
+	// Perform Kalman Filtering
+	filterBlocks();
+
 	pthread_mutex_unlock(&ar_blocks_mutex_);
 
 }
@@ -126,7 +189,7 @@ void ARWorldBuilder::setupCageEnvironment()
 	
 
 	// Setup the deskspace
-
+	
 	
 	// Setup the test block
 	ROS_INFO("Adding test block to the cage environment, using planning frame %s...", planning_frame_.c_str());
