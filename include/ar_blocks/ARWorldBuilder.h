@@ -52,11 +52,11 @@ public:
 	std::map<unsigned int,ARBlock> ar_blocks_;
 
 	// Filters
-	/*std::map<unsigned int,alvar::KalmanSensor> ar_blocks_filtered_;
+	std::map<unsigned int,alvar::KalmanSensor> ar_blocks_filtered_;
 	std::map<unsigned int,alvar::Kalman> ar_blocks_kalman_;
 	std::map<unsigned int,unsigned long long> ar_blocks_timestamps_;
 	void addBaseKalmanFilter(unsigned int);
-	void filterBlocks();*/
+	void filterBlocks();
 	
 	unsigned int cutoff_confidence_;
 	

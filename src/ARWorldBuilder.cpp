@@ -54,57 +54,58 @@ ARWorldBuilder::~ARWorldBuilder()
 	ROS_INFO("All cleaned up.");
 }
 
-/* void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
+void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 {
 	// Setup the pose's positional filter
 	ar_blocks_filtered_.insert(pair<unsigned int, KalmanSensor>(block_id,KalmanSensor(6,3)));
 	ar_blocks_kalman_.insert(pair<unsigned int, Kalman>(block_id,Kalman(6)));
-	// ar_blocks_filtered_[block_id] = KalmanSensor(6,3);
-	// ar_blocks_kalman_[block_id] = Kalman(6);
+	// ar_blocks_filtered_.find(block_id)->second = KalmanSensor(6,3);
+	// ar_blocks_kalman_.find(block_id)->second = Kalman(6);
 	
-	cvZero(ar_blocks_filtered_[block_id].H);
-	cvmSet(ar_blocks_filtered_[block_id].H,0,0,1);
-	cvmSet(ar_blocks_filtered_[block_id].H,1,1,1);
-	cvmSet(ar_blocks_filtered_[block_id].H,2,2,1);
 	
-	cvSetIdentity(ar_blocks_filtered_[block_id].R,cvScalar(10));
+	cvZero(ar_blocks_filtered_.find(block_id)->second.H);
+	cvmSet(ar_blocks_filtered_.find(block_id)->second.H,0,0,1);
+	cvmSet(ar_blocks_filtered_.find(block_id)->second.H,1,1,1);
+	cvmSet(ar_blocks_filtered_.find(block_id)->second.H,2,2,1);
 	
-	cvSetIdentity(ar_blocks_kalman_[block_id].F);
-	cvmSet(ar_blocks_kalman_[block_id].F,0,3,1);
-	cvmSet(ar_blocks_kalman_[block_id].F,1,4,1);
-	cvmSet(ar_blocks_kalman_[block_id].F,2,5,1);
+	cvSetIdentity(ar_blocks_filtered_.find(block_id)->second.R,cvScalar(10));
+	
+	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second.F);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.F,0,3,1);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.F,1,4,1);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.F,2,5,1);
 
-	cvmSet(ar_blocks_kalman_[block_id].Q,0,0,0.0001);
-	cvmSet(ar_blocks_kalman_[block_id].Q,1,1,0.0001);
-	cvmSet(ar_blocks_kalman_[block_id].Q,2,2,0.0001);
-	cvmSet(ar_blocks_kalman_[block_id].Q,3,3,0.00001);
-	cvmSet(ar_blocks_kalman_[block_id].Q,4,4,0.00001);
-	cvmSet(ar_blocks_kalman_[block_id].Q,5,5,0.00001);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.Q,0,0,0.0001);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.Q,1,1,0.0001);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.Q,2,2,0.0001);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.Q,3,3,0.00001);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.Q,4,4,0.00001);
+	cvmSet(ar_blocks_kalman_.find(block_id)->second.Q,5,5,0.00001);
 	
-	cvSetIdentity(ar_blocks_kalman_[block_id].P,cvScalar(100));
+	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second.P,cvScalar(100));
 
-	// cvmSet(ar_blocks_filtered_[block_id].z,0,0,x);
-	// cvmSet(ar_blocks_filtered_[block_id].z,1,0,y);
-	// cvmSet(ar_blocks_filtered_[block_id].z,2,0,z);
+	// cvmSet(ar_blocks_filtered_.find(block_id)->second.z,0,0,x);
+	// cvmSet(ar_blocks_filtered_.find(block_id)->second.z,1,0,y);
+	// cvmSet(ar_blocks_filtered_.find(block_id)->second.z,2,0,z);
 	
 	// Setup the pose's orientational filter
-}*/
+}
 
-/*void ARWorldBuilder::filterBlocks()
+void ARWorldBuilder::filterBlocks()
 {
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 	for( ; it != end; it++ ) {
-		cvmSet(ar_blocks_filtered_[it->first].z,0,0,it->second.pose_.position.x);
-		cvmSet(ar_blocks_filtered_[it->first].z,1,0,it->second.pose_.position.y);
-		cvmSet(ar_blocks_filtered_[it->first].z,2,0,it->second.pose_.position.z);
+		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,0,0,it->second.pose_.position.x);
+		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,1,0,it->second.pose_.position.y);
+		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,2,0,it->second.pose_.position.z);
 	
 		// Modify the time stamps and perform predict and update
 		unsigned long long time_now = ros::Time::now().toNSec();
-		ar_blocks_kalman_[it->first].predict_update(&(ar_blocks_filtered_[it->first]), ar_blocks_timestamps_[it->first] - time_now);
+		ar_blocks_kalman_.find(it->first)->second.predict_update(&(ar_blocks_filtered_.find(it->first)->second), ar_blocks_timestamps_[it->first] - time_now);
 		ar_blocks_timestamps_[it->first] = time_now;
 	}
-}*/
+}
 
 void ARWorldBuilder::createOrderedStack()
 {
