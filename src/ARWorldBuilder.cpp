@@ -145,14 +145,14 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 		if( markers_msg->markers[i].confidence >= cutoff_confidence_ ) {
 			// Eventually differentiate the different marker types
 			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end())
-				// addBaseKalmanFilter(markers_msg->markers[i].id);
+				addBaseKalmanFilter(markers_msg->markers[i].id);
 			
 			ar_blocks_[ markers_msg->markers[i].id ].pose_ = markers_msg->markers[i].pose.pose;
 		}
 	}
 	
 	// Perform Kalman Filtering
-	// filterBlocks();
+	filterBlocks();
 
 	pthread_mutex_unlock(&ar_blocks_mutex_);
 
