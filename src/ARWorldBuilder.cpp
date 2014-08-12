@@ -54,13 +54,13 @@ ARWorldBuilder::~ARWorldBuilder()
 	ROS_INFO("All cleaned up.");
 }
 
-void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
+/* void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 {
 	// Setup the pose's positional filter
 	ar_blocks_filtered_.insert(pair<unsigned int, KalmanSensor>(block_id,KalmanSensor(6,3)));
 	ar_blocks_kalman_.insert(pair<unsigned int, Kalman>(block_id,Kalman(6)));
-	/*ar_blocks_filtered_[block_id] = KalmanSensor(6,3);
-	ar_blocks_kalman_[block_id] = Kalman(6);*/
+	// ar_blocks_filtered_[block_id] = KalmanSensor(6,3);
+	// ar_blocks_kalman_[block_id] = Kalman(6);
 	
 	cvZero(ar_blocks_filtered_[block_id].H);
 	cvmSet(ar_blocks_filtered_[block_id].H,0,0,1);
@@ -83,14 +83,14 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	
 	cvSetIdentity(ar_blocks_kalman_[block_id].P,cvScalar(100));
 
-	/* cvmSet(ar_blocks_filtered_[block_id].z,0,0,x);
-	cvmSet(ar_blocks_filtered_[block_id].z,1,0,y);
-	cvmSet(ar_blocks_filtered_[block_id].z,2,0,z);*/
+	// cvmSet(ar_blocks_filtered_[block_id].z,0,0,x);
+	// cvmSet(ar_blocks_filtered_[block_id].z,1,0,y);
+	// cvmSet(ar_blocks_filtered_[block_id].z,2,0,z);
 	
 	// Setup the pose's orientational filter
-}
+}*/
 
-void ARWorldBuilder::filterBlocks()
+/*void ARWorldBuilder::filterBlocks()
 {
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
@@ -104,7 +104,7 @@ void ARWorldBuilder::filterBlocks()
 		ar_blocks_kalman_[it->first].predict_update(&(ar_blocks_filtered_[it->first]), ar_blocks_timestamps_[it->first] - time_now);
 		ar_blocks_timestamps_[it->first] = time_now;
 	}
-}
+}*/
 
 void ARWorldBuilder::createOrderedStack()
 {
@@ -144,14 +144,14 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 		if( markers_msg->markers[i].confidence >= cutoff_confidence_ ) {
 			// Eventually differentiate the different marker types
 			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end())
-				addBaseKalmanFilter(markers_msg->markers[i].id);
+				// addBaseKalmanFilter(markers_msg->markers[i].id);
 			
 			ar_blocks_[ markers_msg->markers[i].id ].pose_ = markers_msg->markers[i].pose.pose;
 		}
 	}
 	
 	// Perform Kalman Filtering
-	filterBlocks();
+	// filterBlocks();
 
 	pthread_mutex_unlock(&ar_blocks_mutex_);
 
