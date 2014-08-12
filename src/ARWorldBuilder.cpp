@@ -306,6 +306,8 @@ void ARWorldBuilder::armMovementTest()
 			right_arm_.setJointValueTarget(right_joint_values);
 		}
 	}
+
+	cout << "Finished arm movement test." << endl << endl;
 	
 }
 
@@ -341,7 +343,8 @@ void ARWorldBuilder::endpointControlTest()
 			cout << endl << ((right_hand_.setPoseTarget(right_pose)) ? "Successfully " : "Could not ") << " set the pose target";
 		}
 	}
-*/	
+	cout << "Finished endpoint control test." << endl << endl;
+*/
 }
 
 void ARWorldBuilder::gripperControlTest()

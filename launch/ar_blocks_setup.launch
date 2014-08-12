@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
 
+  <group ns="nxr_ar_blocks">
+
+    <!-- Load the robot's grasp data -->
+    <rosparam command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
+
+  </group>
+
   <group ns="robot">
 
     <!-- GDB functionality -->
