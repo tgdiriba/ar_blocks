@@ -63,8 +63,8 @@ public:
 	// MoveIt! Definitions
 	moveit::planning_interface::MoveGroup left_arm_;
 	moveit::planning_interface::MoveGroup right_arm_;
-	moveit::planning_interface::MoveGroup left_hand_;
-	moveit::planning_interface::MoveGroup right_hand_;
+	// moveit::planning_interface::MoveGroup left_hand_;
+	// moveit::planning_interface::MoveGroup right_hand_;
 	std::string planning_frame_;
 	
 	// MoveIt! Simple Grasps and Visual Tools

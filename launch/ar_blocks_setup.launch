@@ -44,6 +44,6 @@
   <!-- Load other configurations shared between all three Baxter run modes-->
   <include file="$(find baxter_control)/launch/baxter_configure.launch"/>    
 
-	<node name="ar_blocks_environment" pkg="ar_blocks" type="ar_blocks_environment" respawn="false" />
+	<!--node name="ar_blocks_environment" pkg="ar_blocks" type="ar_blocks_environment" respawn="false" /-->
 
 </launch>

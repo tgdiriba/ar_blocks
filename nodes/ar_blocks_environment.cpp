@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh;
 	
 	// Configure the camera resolution
-	ros::ServiceClient sc = nh.serviceClient<baxter_core_msgs::OpenCamera>("/camera/open");
+	/* ros::ServiceClient sc = nh.serviceClient<baxter_core_msgs::OpenCamera>("/camera/open");
 	baxter_core_msgs::OpenCamera open_left_camera, open_right_camera;
 	open_left_camera.request.name = string("left");
 	open_left_camera.request.settings.width = 1280;
@@ -25,10 +25,11 @@ int main(int argc, char **argv)
 	
 	if(!sc.call(open_left_camera) || !sc.call(open_right_camera)) {
 		ROS_ERROR("Failed to set the camera resolution...");
-	}
+	}*/
 		
 	ARWorldBuilder block_world;
 	ROS_INFO("Successfully built AR World...");
+	block_world.runAllTests();
 	
 	ros::AsyncSpinner spinner(2);
 	spinner.start();
