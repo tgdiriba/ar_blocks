@@ -65,6 +65,9 @@ public:
 	moveit_simple_grasps::GraspData left_grasp_data_;
 	moveit_simple_grasps::GraspData right_grasp_data_;
 	moveit_visual_tools::VisualToolsPtr visual_tools_;
+
+	// Pick and Place Routines
+	
 	
 	// MoveIt! Tests
 	void runAllTests();
