@@ -47,7 +47,6 @@ public:
 	pthread_mutex_t ar_blocks_mutex_;
 	
 	ros::NodeHandle nh_;
-	ros::Publisher collision_object_pub_;
 	ros::Subscriber ar_pose_marker_sub_;
 	std::map<unsigned int,ARBlock> ar_blocks_;
 
@@ -60,16 +59,11 @@ public:
 	
 	unsigned int cutoff_confidence_;
 	
-	// MoveIt! Definitions
-	moveit::planning_interface::MoveGroup left_arm_;
-	moveit::planning_interface::MoveGroup right_arm_;
-	// moveit::planning_interface::MoveGroup left_hand_;
-	// moveit::planning_interface::MoveGroup right_hand_;
-	std::string planning_frame_;
-	
 	// MoveIt! Simple Grasps and Visual Tools
-	moveit_simple_grasps::SimpleGraspsPtr simple_grasps_;
-	moveit_simple_grasps::GraspData grasp_data_;
+	moveit_simple_grasps::SimpleGraspsPtr left_simple_grasps_;
+	moveit_simple_grasps::SimpleGraspsPtr right_simple_grasps_;
+	moveit_simple_grasps::GraspData left_grasp_data_;
+	moveit_simple_grasps::GraspData right_grasp_data_;
 	moveit_visual_tools::VisualToolsPtr visual_tools_;
 	
 	// MoveIt! Tests

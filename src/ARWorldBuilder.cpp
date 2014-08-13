@@ -11,24 +11,33 @@ static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
 
 ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) : 
 	nh_("~"),
-	cutoff_confidence_(cutoff),
-	left_arm_("left_arm"),
-	right_arm_("right_arm"),
-	planning_frame_("/base")
+	cutoff_confidence_(cutoff)
 {
 	ROS_INFO("Constructing ARWorldBuilder...");
 	
-	collision_object_pub_ = nh_.advertise<moveit_msgs::CollisionObject>("collision_object", 30);
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
 	setupCageEnvironment();
 
 	// Setup moveit_simple_grasps
-	visual_tools_.reset( new moveit_visual_tools::VisualTools("base") );
-	if(!grasp_data_.loadRobotGraspData(nh_, "left_hand"))
-		ROS_ERROR("Failed to load Baxter's grasp data.");
-	simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps(visual_tools_) );
+	if( !left_grasp_data_.loadRobotGraspData(nh_, "left_hand") || ! right_grasp_data_.loadRobotGraspData(nh_, "right_hand"))
+		ros::shutdown();
 
+	ROS_INFO("Successfully loaded the robot's end-effector data...");
+	ROS_INFO("Configuring moveit grasp generation and visualization...");
+
+	visual_tools_.reset( new moveit_visual_tools::VisualTools( "base" ) );
+	visual_tools_->setLifetime(10);
+	visual_tools_->setMuted(false);
+	visual_tools_->loadEEMarker(left_grasp_data_.ee_group_, "left_arm");
+	visual_tools_->loadEEMarker(right_grasp_data_.ee_group_, "right_arm");
+
+	left_simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps( visual_tools_ ) );
+	right_simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps( visual_tools_ ) );
+
+	ROS_INFO("Successfully configured moveit grasp generation and visualization...");
+	
 	// Configure the Kalman Filter
+	ROS_INFO("Setting up filters...");
 
 	// Initialize threads
 	pthread_mutex_init(&ar_blocks_mutex_, NULL);
@@ -159,64 +168,15 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 void ARWorldBuilder::setupCageEnvironment()
 {
 	ROS_INFO("Setting up the cage environment...");
-	vector< moveit_msgs::CollisionObject > object_collection(2);
 
 	// Setup the table
-	ROS_INFO("Adding table to the cage environment, using planning frame %s...", planning_frame_.c_str());
-	object_collection[0] = moveit_msgs::CollisionObject();
-	object_collection[0].header.frame_id = planning_frame_;	
-	object_collection[0].id = "table";
-	
-	vector < shape_msgs::SolidPrimitive > primitive_objects(1);
-	primitive_objects[0].type = shape_msgs::SolidPrimitive::BOX;
-	primitive_objects[0].dimensions.resize(3); 
-	primitive_objects[0].dimensions[0] = g_table_dimensions[0]; //0.608012; 
-	primitive_objects[0].dimensions[1] = g_table_dimensions[1]; //1.21602; 
-	primitive_objects[0].dimensions[2] = g_table_dimensions[2]; //0.60325; 
-	object_collection[0].primitives = primitive_objects;
-
-	// For now this is guesswork on where the center of the table is positioned
-	vector < geometry_msgs::Pose > primitive_object_poses(1);
-	primitive_object_poses[0].position.x = 0.6069 + (g_table_dimensions[0]/2);
-	primitive_object_poses[0].position.y = 0.5842 - (g_table_dimensions[1]/2);	
-	primitive_object_poses[0].position.z = -0.889 + (g_table_dimensions[2]/2);
-	primitive_object_poses[0].orientation.w = 1.0;
-	object_collection[0].primitive_poses = primitive_object_poses;	
-	object_collection[0].operation = moveit_msgs::CollisionObject::ADD;
+	ROS_INFO("Adding table to the cage environment scene...");
+	visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), 0.5842 - (g_table_dimensions[1]/2), 0.0, g_table_dimensions[0], g_table_dimensions[1], g_table_dimensions[2], "table");
 	
 	// Setup the walls
 	
-
-	// Setup the deskspace
-	
-	
-	// Setup the test block
-	ROS_INFO("Adding test block to the cage environment, using planning frame %s...", planning_frame_.c_str());
-	object_collection[1] = moveit_msgs::CollisionObject();
-	object_collection[1].header.frame_id = planning_frame_;	
-	object_collection[1].id = "test_block";
-	
-	primitive_objects[0].type = shape_msgs::SolidPrimitive::BOX;
-	primitive_objects[0].dimensions[0] = 0.063; //0.608012; 
-	primitive_objects[0].dimensions[1] = 0.063; //1.21602; 
-	primitive_objects[0].dimensions[2] = 0.063; //0.60325; 
-	object_collection[1].primitives = primitive_objects;
-
-	// For now this is guesswork on where the center of the table is positioned
-	primitive_object_poses[0].position.x += -(object_collection[0].primitives[0].dimensions[0]/2) + (0.063/2);
-	primitive_object_poses[0].position.y = 0.5842 - (g_table_dimensions[1]/2);	
-	primitive_object_poses[0].position.z += (object_collection[0].primitives[0].dimensions[2]/2) + (0.063/2);
-	primitive_object_poses[0].orientation.w = 1.0;
-	object_collection[1].primitive_poses = primitive_object_poses;	
-	object_collection[1].operation = moveit_msgs::CollisionObject::ADD;
-	
-	 
-	for( vector< moveit_msgs::CollisionObject >::iterator object = object_collection.begin(); object != object_collection.end(); object++ ) {
-		collision_object_pub_.publish(*object);
-	}
-	
 	ROS_INFO("Waiting for published colllision objects to be registered...");
-	ros::Duration(2.0).sleep();
+	// ros::Duration(2.0).sleep();
 
 }
 
@@ -226,7 +186,10 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		collision_object_pub_.publish( it->second.toCollisionObject() );
+		// collision_object_pub_.publish( it->second.toCollisionObject() );
+		std::stringstream ss;
+		ss << it->second.id_;
+		visual_tools_->publishCollisionBlock( it->second.pose_, ss.str(), it->second.dimensions_.x );
 	}
 }
 
@@ -241,6 +204,7 @@ void ARWorldBuilder::runAllTests()
 
 void ARWorldBuilder::visualizeGraspsTest()
 {
+/*
 	cout << endl << "Initiating the Grasp Visualization Tests..." << endl;
 
 	pthread_mutex_lock(&ar_blocks_mutex_);
@@ -259,10 +223,12 @@ void ARWorldBuilder::visualizeGraspsTest()
 	cout << endl << "Finished publishing animated grasps.";
 	cout << endl << "Press any key to continue...";
 	cin >> state;
+*/
 }
 
 void ARWorldBuilder::armMovementTest()
 {
+/*
 	cout << endl << endl << "Initiating the Arm Movement Tests..." << endl;
 	
 	vector<string> left_joint_names, right_joint_names;
@@ -308,7 +274,7 @@ void ARWorldBuilder::armMovementTest()
 	}
 
 	cout << "Finished arm movement test." << endl << endl;
-	
+*/
 }
 
 void ARWorldBuilder::endpointControlTest()
