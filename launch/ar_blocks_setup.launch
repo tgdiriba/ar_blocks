@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
   
-	<remap from="ar_pose_marker" to="nxr_ar_blocks/ar_pose_marker" />
+	<remap from="ar_pose_marker" to="ar_blocks_environment/ar_pose_marker" />
 
-  <include file="$(find baxter_control)/launch/baxter_hardware.launch"/>    
+	<include file="$(find baxter_control)/launch/baxter_hardware.launch"/>    
 	<include file="$(find baxter_moveit_config)/launch/baxter_moveit.launch"/>    
 	<include file="$(find baxter_moveit_config)/launch/moveit_rviz.launch"/>    
 	<include file="$(find ar_track_alvar)/launch/baxter_indiv_no_xtion.launch" />

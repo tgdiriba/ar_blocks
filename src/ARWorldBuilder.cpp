@@ -74,7 +74,7 @@ void ARWorldBuilder::printInfo()
 		it->second.printInfo();
 	}	
 	
-	pthread_mutex_unlock(&ar_blocks_mutex);
+	pthread_mutex_unlock(&ar_blocks_mutex_);
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -189,7 +189,7 @@ void ARWorldBuilder::setupCageEnvironment()
 
 	// Setup the table
 	ROS_INFO("Adding table to the cage environment scene...");
-	visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), 0.5842 - (g_table_dimensions[1]/2), 0.0, g_table_dimensions[1], g_table_dimensions[0], g_table_dimensions[2], "table");
+	// visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), /*0.5842 - (g_table_dimensions[1]/2)*/0.0, 0.0, g_table_dimensions[1], g_table_dimensions[0], g_table_dimensions[2], "table");
 	
 	// Setup the walls
 	
