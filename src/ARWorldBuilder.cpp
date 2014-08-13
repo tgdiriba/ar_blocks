@@ -1,4 +1,5 @@
 #include <ar_blocks/ARWorldBuilder.h>
+#include <ros/console.h>
 
 namespace nxr {
 
@@ -61,6 +62,19 @@ ARWorldBuilder::~ARWorldBuilder()
 	
 	pthread_mutex_destroy(&ar_blocks_mutex_);
 	ROS_INFO("All cleaned up.");
+}
+
+void ARWorldBuilder::printInfo()
+{
+	pthread_mutex_lock(&ar_blocks_mutex_);
+	
+	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
+	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
+	for( ; it != end; it++ ) {
+		it->second.printInfo();
+	}	
+	
+	pthread_mutex_unlock(&ar_blocks_mutex);
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -164,6 +178,8 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 	// filterBlocks();
 
 	pthread_mutex_unlock(&ar_blocks_mutex_);
+
+	printInfo();
 
 }
 

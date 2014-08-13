@@ -69,6 +69,9 @@ public:
 	// Pick and Place Routines
 	
 	
+	// Debugging Routines
+	void printInfo();
+
 	// MoveIt! Tests
 	void runAllTests();
 	void armMovementTest();	

@@ -21,6 +21,20 @@ ARBlock::ARBlock(float *dims, int id) : id_(id)
 	dimensions_.z = dims[2];
 }
 
+void ARBlock::printInfo()
+{
+	std::cout << "Block " << id_ << " Pose:" << std::endl;
+	std::cout << "\tPosition: " << std::endl;
+	std::cout << "\t\tx: " << pose_.position.x << std::endl;
+	std::cout << "\t\ty: " << pose_.position.y << std::endl;
+	std::cout << "\t\tz: " << pose_.position.z << std::endl;
+	std::cout << "\tOrientation: " << std::endl;
+	std::cout << "\t\tx: " << pose_.orientation.x << std::endl;
+	std::cout << "\t\ty: " << pose_.orientation.y << std::endl;
+	std::cout << "\t\tz: " << pose_.orientation.z << std::endl;
+	std::cout << "\t\tw: " << pose_.orientation.w << std::endl;
+}
+
 moveit_msgs::CollisionObject ARBlock::toCollisionObject(std::string planning_frame)
 {
     moveit_msgs::CollisionObject block;

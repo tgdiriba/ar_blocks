@@ -38,6 +38,10 @@ public:
 		float dims_[3];
 		dimensions dimensions_;
 	};
+
+	// Debugging
+	void printInfo();
+
 };
 
 }
