@@ -11,7 +11,7 @@ using namespace nxr;
 int main(int argc, char **argv)
 {
 	ros::init( argc, argv, "nxr_ar_blocks" );
-	ros::NodeHandle nh;
+	ros::NodeHandle nh("~");
 	
 	// Configure the camera resolution
 	/* ros::ServiceClient sc = nh.serviceClient<baxter_core_msgs::OpenCamera>("/camera/open");

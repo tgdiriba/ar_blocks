@@ -4,10 +4,20 @@
   <include file="$(find baxter_control)/launch/baxter_hardware.launch"/>    
 	<include file="$(find baxter_moveit_config)/launch/baxter_moveit.launch"/>    
 	<include file="$(find baxter_moveit_config)/launch/moveit_rviz.launch"/>    
+	<include file="$(find ar_track_alvar)/launch/baxter_indiv_no_xtion.launch" />
 	
-	
+	<!--group ns="ar_blocks_environment/left_hand">
+	 <rosparam command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
+	</group>	
+	<group ns="ar_blocks_environment/left_hand">
+	 <rosparam command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
+	</group-->	
+	 <!--rosparam ns="/ar_blocks_environment/left_hand" command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
+	 <rosparam ns="/ar_blocks_environment/right_hand" command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
 	<node name="ar_blocks_environment" pkg="ar_blocks" type="ar_blocks_environment" respawn="false">
-    <rosparam command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
-	</node>
+	</node-->
+	
+	<rosparam ns="ar_blocks_environment" command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
+	<node name="ar_blocks_environment" pkg="ar_blocks" type="ar_blocks_environment" respawn="false" />
 
 </launch>

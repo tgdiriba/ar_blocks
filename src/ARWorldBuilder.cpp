@@ -16,7 +16,6 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	ROS_INFO("Constructing ARWorldBuilder...");
 	
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
-	setupCageEnvironment();
 
 	// Setup moveit_simple_grasps
 	if( !left_grasp_data_.loadRobotGraspData(nh_, "left_hand") || ! right_grasp_data_.loadRobotGraspData(nh_, "right_hand"))
@@ -30,6 +29,7 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	visual_tools_->setMuted(false);
 	visual_tools_->loadEEMarker(left_grasp_data_.ee_group_, "left_arm");
 	visual_tools_->loadEEMarker(right_grasp_data_.ee_group_, "right_arm");
+	
 
 	left_simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps( visual_tools_ ) );
 	right_simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps( visual_tools_ ) );
@@ -38,6 +38,8 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	
 	// Configure the Kalman Filter
 	ROS_INFO("Setting up filters...");
+	
+	setupCageEnvironment();
 
 	// Initialize threads
 	pthread_mutex_init(&ar_blocks_mutex_, NULL);
