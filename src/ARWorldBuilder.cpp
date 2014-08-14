@@ -1,6 +1,4 @@
 #include <ar_blocks/ARWorldBuilder.h>
-#include <moveit_msgs/Grasp.h>
-#include <ros/console.h>
 
 namespace nxr {
 
@@ -13,12 +11,15 @@ static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
 
 ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) : 
 	nh_("~"),
+	left_arm_("left_arm"),
+	right_arm_("right_arm"),
 	cutoff_confidence_(cutoff)
 {
 	ROS_INFO("Constructing ARWorldBuilder...");
 	
-	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
-
+	left_arm_.setPlanningTime(30);
+	right_arm_.setPlanningTime(30);
+	
 	// Setup moveit_simple_grasps
 	if( !left_grasp_data_.loadRobotGraspData(nh_, "left_hand") || ! right_grasp_data_.loadRobotGraspData(nh_, "right_hand"))
 		ros::shutdown();
@@ -26,29 +27,38 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	ROS_INFO("Successfully loaded the robot's end-effector data...");
 	ROS_INFO("Configuring moveit grasp generation and visualization...");
 
+	planning_scene_monitor_.reset( new planning_scene_monitor::PlanningSceneMonitor("robot_description") );
+
 	visual_tools_.reset( new moveit_visual_tools::VisualTools( "base" ) );
 	visual_tools_->setLifetime(10);
 	visual_tools_->setMuted(false);
 	visual_tools_->loadEEMarker(left_grasp_data_.ee_group_, "left_arm");
 	visual_tools_->loadEEMarker(right_grasp_data_.ee_group_, "right_arm");
 	visual_tools_->setFloorToBaseHeight(-0.9);
-	
 
+	grasp_filter_.reset( new moveit_simple_grasps::GraspFilter( 
+													planning_scene_monitor_->getPlanningScene()->getCurrentState(),
+													visual_tools_ ) );
+	
 	left_simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps( visual_tools_ ) );
 	right_simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps( visual_tools_ ) );
-
+	
 	ROS_INFO("Successfully configured moveit grasp generation and visualization...");
 	
 	// Configure the Kalman Filter
 	ROS_INFO("Setting up filters...");
 	
 	setupCageEnvironment();
+	left_arm_.setSupportSurfaceName("table");
+	right_arm_.setSupportSurfaceName("table");
 
 	// Initialize threads
 	pthread_mutex_init(&ar_blocks_mutex_, NULL);
 	thread_ids_.push_back( pthread_t() );
 	ROS_INFO("Spawning worker threads...");
 	pthread_create(&thread_ids_.back(), static_cast<pthread_attr_t*>(NULL), updateThread, static_cast<void*>(this));
+	
+	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
 }
 
 ARWorldBuilder::~ARWorldBuilder()
@@ -211,12 +221,13 @@ void ARWorldBuilder::updateWorld()
 void ARWorldBuilder::runAllTests()
 {
 	armMovementTest();
+	primaryTest();
 	endpointControlTest();
 	gripperControlTest();
 	visualizeGraspsTest();
 }
 
-void ARWorldBuilder::visualizeGraspsTest()
+void ARWorldBuilder::primaryTest()
 {
 	cout << endl << "Initiating the Grasp Visualization Tests..." << endl;
 	cout << endl << "Begin sequence (y/n)? ";
@@ -229,38 +240,105 @@ void ARWorldBuilder::visualizeGraspsTest()
 		map<unsigned int, ARBlock>::iterator sit = ar_blocks_.begin();
 		map<unsigned int, ARBlock>::iterator eit = ar_blocks_.end();
 		vector<moveit_msgs::Grasp> grasps;
-		
+		vector<trajectory_msgs::JointTrajectoryPoint> ik;
+		ARBlock final_block;
+		bool left_side = true;
 		for( ; sit != eit; sit++) {
 			// Check which side the block is on
-			bool left_side = (sit->second.pose_.position.x <= 0) ? (true) : (false);
+			left_side = (sit->second.pose_.position.x <= 0) ? (true) : (false);
 			moveit_simple_grasps::SimpleGraspsPtr &grasper = (left_side) ? left_simple_grasps_ : right_simple_grasps_;
 			moveit_simple_grasps::GraspData &gdata = (left_side) ? left_grasp_data_ : right_grasp_data_;
+			std::string planning_group = (left_side) ? ("left_arm") : ("right_arm");
 			
 			grasps.clear();
 			grasper->generateBlockGrasps( sit->second.pose_, gdata, grasps );
+			grasp_filter_->filterGrasps( grasps, ik, true, gdata.ee_parent_link_, planning_group );
 			visual_tools_->publishAnimatedGrasps( grasps, gdata.ee_parent_link_ );
+			visual_tools_->publishIKSolutions( ik, planning_group, 0.25 );
+
+			final_block = sit->second;
 		}
 		
-		pthread_mutex_unlock(&ar_blocks_mutex_);
+		cout << endl << "Finished publishing animated grasps." << endl;;
 		
-		cout << endl << "Finished publishing animated grasps.";
-		cout << endl << "Press any key to continue...";
-		cin >> state;
+		// Simply move the last block in the dictionary
+		cout << endl << endl << "Initiating the Pick and Place Test on block " << final_block.getStringId() << "..." << endl;
+		cout << "Attempting to transfer block from one side to the other..." << endl;
+		
+		cout << "Picking up block..." << endl;
+		move_group_interface::MoveGroup &mg = (left_side) ? (left_arm_) : (right_arm_);
+		moveit_simple_grasps::GraspData &gd = (left_side) ? (left_grasp_data_) : (right_grasp_data_);
+		// mg.setSupportSurfaceName("table"); DONE IN CONSTRUCTOR
+		if(mg.pick( final_block.getStringId(), grasps )) {
+			cout << "Successfully picked up block." << endl;
+			cout << "Continue to place operation (y/n)? ";
+			cin >> state;
+			if(state == 'y') {
+				cout << "Placing block..." << endl;
+				
+				// Generate a placeable area
+				vector<moveit_msgs::PlaceLocation> placeable_area;
+				moveit_msgs::PlaceLocation ploc;
+				
+				geometry_msgs::PoseStamped goal_stamped;
+				goal_stamped.header.frame_id = gd.base_link_;
+				goal_stamped.header.stamp = ros::Time::now();
+				geometry_msgs::Pose goal = final_block.pose_;
+				goal.position.x *= -1;
+				goal_stamped.pose = goal;
+				
+				/* USING CODE FROM DAVE COLEMAN block_pick_place.cpp IN baxter_pick_place PACKAGE */
+				// Approach
+				moveit_msgs::GripperTranslation pre_place_approach;
+				pre_place_approach.direction.header.stamp = ros::Time::now();
+				pre_place_approach.desired_distance = gd.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
+				pre_place_approach.min_distance = gd.approach_retreat_min_dist_; // half of the desired? Untested.
+				pre_place_approach.direction.header.frame_id = gd.base_link_;
+				pre_place_approach.direction.vector.x = 0;
+				pre_place_approach.direction.vector.y = 0;
+				pre_place_approach.direction.vector.z = -1; // Approach direction (negative z axis)  // TODO: document this assumption
+				ploc.pre_place_approach = pre_place_approach;
+
+				// Retreat
+				moveit_msgs::GripperTranslation post_place_retreat;
+				post_place_retreat.direction.header.stamp = ros::Time::now();
+				post_place_retreat.desired_distance = gd.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
+				post_place_retreat.min_distance = gd.approach_retreat_min_dist_; // half of the desired? Untested.
+				post_place_retreat.direction.header.frame_id = gd.base_link_;
+				post_place_retreat.direction.vector.x = 0;
+				post_place_retreat.direction.vector.y = 0;
+				post_place_retreat.direction.vector.z = 1; // Retreat direction (pos z axis)
+				ploc.post_place_retreat = post_place_retreat;
+
+				// Post place posture - use same as pre-grasp posture (the OPEN command)
+				ploc.post_place_posture = gd.pre_grasp_posture_;
+				mg.setPlannerId("RRTConnectionkConfigDefault");
+
+				// Calcuate goal pose. Mirror the x axis to be on the other side of the table
+				if(mg.place(final_block.getStringId(), placeable_area)) cout << "Successfully placed block!" << endl;
+				else ROS_ERROR("Failed to place block.");
+			}
+		}
+		else ROS_ERROR("Failed to pick up block.");
+		
+		pthread_mutex_unlock(&ar_blocks_mutex_);
 	}
 	else {
-		cout << endl << "Terminating Grasp Visualization Tests..." << endl;
+		cout << endl << "Terminating Primary Test Routine..." << endl;
 	}
+	
+	cout << endl << "Completed the Primary Test Routine." << endl;
+	cout << "Enter any key to continue...";
+	cin >> state;
+}
+
+void ARWorldBuilder::visualizeGraspsTest()
+{
+
 }
 
 void ARWorldBuilder::armMovementTest()
 {
-	
-	
-	
-	
-	
-	
-	
 /*
 	cout << endl << endl << "Initiating the Arm Movement Tests..." << endl;
 	

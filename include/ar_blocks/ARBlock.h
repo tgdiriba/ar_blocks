@@ -28,7 +28,8 @@ public:
 	
 	ARBlock(unsigned int b_type = BLOCK_A);
 	ARBlock(float *dims, int id = 0);	
-	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("/base"));	
+	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("base"));	
+	std::string getStringId();
 
 	geometry_msgs::Pose pose_;
 	unsigned int block_type_; 

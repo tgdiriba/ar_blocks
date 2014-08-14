@@ -2,16 +2,22 @@
 #define ARWORLDBUILDER_H
 
 #include <ros/ros.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <ros/console.h>
+// #include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit/planning_scene/planning_scene.h>
 #include <moveit/move_group_interface/move_group.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit_msgs/PlanningSceneComponents.h>
+#include <moveit_msgs/GripperTranslation.h>
+#include <moveit_msgs/Grasp.h>
 #include <moveit_simple_grasps/simple_grasps.h>
 #include <moveit_simple_grasps/grasp_data.h>
+#include <moveit_simple_grasps/grasp_filter.h>
 #include <moveit_visual_tools/visual_tools.h>
 #include <std_msgs/Header.h>
 #include <shape_msgs/SolidPrimitive.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <map>
 #include <deque>
@@ -27,9 +33,6 @@
 #include <ar_blocks/ARBlock.h>
 
 namespace nxr {
-
-// static const float g_table_dimensions[3];
-// static const float g_table_position[3];
 
 class ARWorldBuilder {
 public:
@@ -58,10 +61,16 @@ public:
 	void filterBlocks();
 	
 	unsigned int cutoff_confidence_;
+
+	// MoveIt!
+	move_group_interface::MoveGroup left_arm_;
+	move_group_interface::MoveGroup right_arm_;
 	
 	// MoveIt! Simple Grasps and Visual Tools
+	planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 	moveit_simple_grasps::SimpleGraspsPtr left_simple_grasps_;
 	moveit_simple_grasps::SimpleGraspsPtr right_simple_grasps_;
+	moveit_simple_grasps::GraspFilterPtr grasp_filter_;
 	moveit_simple_grasps::GraspData left_grasp_data_;
 	moveit_simple_grasps::GraspData right_grasp_data_;
 	moveit_visual_tools::VisualToolsPtr visual_tools_;
@@ -74,6 +83,7 @@ public:
 
 	// MoveIt! Tests
 	void runAllTests();
+	void primaryTest();
 	void armMovementTest();	
 	void endpointControlTest();
 	void gripperControlTest();

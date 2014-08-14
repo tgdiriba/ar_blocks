@@ -21,6 +21,13 @@ ARBlock::ARBlock(float *dims, int id) : id_(id)
 	dimensions_.z = dims[2];
 }
 
+std::string ARBlock::getStringId()
+{
+	std::stringstream ss;
+	ss << id_;
+	return ss.str();
+}
+
 void ARBlock::printInfo()
 {
 	std::cout << "Block " << id_ << " Pose:" << std::endl;
