@@ -17,6 +17,8 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 {
 	ROS_INFO("Constructing ARWorldBuilder...");
 	
+	collision_object_pub_ = ros::Publisher<moveit_msgs::CollisionObject>("collision_object",30);
+
 	left_arm_.setPlanningTime(30);
 	right_arm_.setPlanningTime(30);
 	
@@ -213,11 +215,11 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		// collision_object_pub_.publish( it->second.toCollisionObject() );
-		std::stringstream ss;
+		 collision_object_pub_.publish( it->second.toCollisionObject() );
+		/*std::stringstream ss;
 		ss << it->second.id_;
 		visual_tools_->publishCollisionBlock( it->second.pose_, ss.str(), it->second.dimensions_.x );
-		// it->second.printInfo();
+		*/// it->second.printInfo();
 	}
 }
 
