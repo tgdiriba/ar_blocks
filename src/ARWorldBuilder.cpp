@@ -1,4 +1,5 @@
 #include <ar_blocks/ARWorldBuilder.h>
+#include <moveit_msgs/Grasp.h>
 #include <ros/console.h>
 
 namespace nxr {
@@ -30,6 +31,7 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	visual_tools_->setMuted(false);
 	visual_tools_->loadEEMarker(left_grasp_data_.ee_group_, "left_arm");
 	visual_tools_->loadEEMarker(right_grasp_data_.ee_group_, "right_arm");
+	visual_tools_->setFloorToBaseHeight(-0.9);
 	
 
 	left_simple_grasps_.reset( new moveit_simple_grasps::SimpleGrasps( visual_tools_ ) );
@@ -66,15 +68,11 @@ ARWorldBuilder::~ARWorldBuilder()
 
 void ARWorldBuilder::printInfo()
 {
-	pthread_mutex_lock(&ar_blocks_mutex_);
-	
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 	for( ; it != end; it++ ) {
 		it->second.printInfo();
 	}	
-	
-	pthread_mutex_unlock(&ar_blocks_mutex);
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -178,9 +176,6 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 	// filterBlocks();
 
 	pthread_mutex_unlock(&ar_blocks_mutex_);
-
-	printInfo();
-
 }
 
 void ARWorldBuilder::setupCageEnvironment()
@@ -193,7 +188,7 @@ void ARWorldBuilder::setupCageEnvironment()
 	
 	// Setup the walls
 	
-	ROS_INFO("Waiting for published colllision objects to be registered...");
+	ROS_INFO("Waiting for published collision objects to be registered...");
 	// ros::Duration(2.0).sleep();
 
 }
@@ -208,6 +203,7 @@ void ARWorldBuilder::updateWorld()
 		std::stringstream ss;
 		ss << it->second.id_;
 		visual_tools_->publishCollisionBlock( it->second.pose_, ss.str(), it->second.dimensions_.x );
+		it->second.printInfo();
 	}
 }
 
@@ -222,30 +218,49 @@ void ARWorldBuilder::runAllTests()
 
 void ARWorldBuilder::visualizeGraspsTest()
 {
-/*
 	cout << endl << "Initiating the Grasp Visualization Tests..." << endl;
-
-	pthread_mutex_lock(&ar_blocks_mutex_);
-
-	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
-	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
-	for( ; it != end; it++ ) {
-		vector<moveit_msgs::Grasp> grasps;
-		simple_grasps_->generateBlockGrasps( it->second.pose_, grasp_data_, grasps );
-		visual_tools_->publishAnimatedGrasps( grasps, grasp_data_.ee_parent_link_ );
-	}
-	
-	pthread_mutex_unlock(&ar_blocks_mutex_);
-
+	cout << endl << "Begin sequence (y/n)? ";
 	char state = 'n';
-	cout << endl << "Finished publishing animated grasps.";
-	cout << endl << "Press any key to continue...";
 	cin >> state;
-*/
+	
+	if(state == 'y') {
+		pthread_mutex_lock(&ar_blocks_mutex_);
+		
+		map<unsigned int, ARBlock>::iterator sit = ar_blocks_.begin();
+		map<unsigned int, ARBlock>::iterator eit = ar_blocks_.end();
+		vector<moveit_msgs::Grasp> grasps;
+		
+		for( ; sit != eit; sit++) {
+			// Check which side the block is on
+			bool left_side = (sit->second.pose_.position.x <= 0) ? (true) : (false);
+			moveit_simple_grasps::SimpleGraspsPtr &grasper = (left_side) ? left_simple_grasps_ : right_simple_grasps_;
+			moveit_simple_grasps::GraspData &gdata = (left_side) ? left_grasp_data_ : right_grasp_data_;
+			
+			grasps.clear();
+			grasper->generateBlockGrasps( sit->second.pose_, gdata, grasps );
+			visual_tools_->publishAnimatedGrasps( grasps, gdata.ee_parent_link_ );
+		}
+		
+		pthread_mutex_unlock(&ar_blocks_mutex_);
+		
+		cout << endl << "Finished publishing animated grasps.";
+		cout << endl << "Press any key to continue...";
+		cin >> state;
+	}
+	else {
+		cout << endl << "Terminating Grasp Visualization Tests..." << endl;
+	}
 }
 
 void ARWorldBuilder::armMovementTest()
 {
+	
+	
+	
+	
+	
+	
+	
 /*
 	cout << endl << endl << "Initiating the Arm Movement Tests..." << endl;
 	
