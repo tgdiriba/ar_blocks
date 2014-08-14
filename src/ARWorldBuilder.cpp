@@ -17,7 +17,7 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 {
 	ROS_INFO("Constructing ARWorldBuilder...");
 	
-	collision_object_pub_ = ros::Publisher<moveit_msgs::CollisionObject>("collision_object",30);
+	collision_object_pub_ = nh_.advertise<moveit_msgs::CollisionObject>("collision_object",30);
 
 	left_arm_.setPlanningTime(30);
 	right_arm_.setPlanningTime(30);
