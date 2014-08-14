@@ -1,14 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0"?>
 <launch>
-  
-	<remap from="ar_pose_marker" to="nxr_ar_blocks/ar_pose_marker" />
-
-  <include file="$(find baxter_control)/launch/baxter_hardware.launch"/>    
-	<include file="$(find baxter_moveit_config)/launch/baxter_moveit.launch"/>    
-	<include file="$(find baxter_moveit_config)/launch/moveit_rviz.launch"/>    
-	<include file="$(find ar_track_alvar)/launch/baxter_indiv_no_xtion.launch" />
-	
-	<rosparam ns="ar_blocks_environment" command="load" file="$(find moveit_simple_grasps)/config/baxter_grasp_data.yaml" />
-	<node name="ar_blocks_environment" pkg="ar_blocks" type="ar_blocks_environment" respawn="false" />
-
+	<include file="$(find ar_blocks)/launch/ar_blocks_moveit.launch" />
+	<include file="$(find ar_blocks)/launch/ar_blocks_environment.launch" />
 </launch>
