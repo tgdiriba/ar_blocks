@@ -2,18 +2,19 @@
 #include <ros/console.h>
 #include <ar_track_alvar/AlvarMarkers.h>
 #include <ar_track_alvar/AlvarMarker.h>
+#include <map>
 
-map<unsigned int,AlvarMarker> markers_dict;
+std::map<unsigned int,AlvarMarker> markers_dict;
 
 void arCallback(const ar_track_alvar::AlvarMarkers::ConstPtr &markers_msg)
 {
 	for(int i = 0; i < markers_msg->markers.size(); i++) {
-		markers_dict[markers_msg->markers[i].id] = markers_msg->markers[i];
+		::markers_dict[markers_msg->markers[i].id] = markers_msg->markers[i];
 	}
 
 	// Print out the entire dictionary
-	map<unsigned int,AlvarMarker>::iterator bit = markers_dict.begin();
-	map<unsigned int,AlvarMarker>::iterator eit = markers_dict.end();
+	std::map<unsigned int,AlvarMarker>::iterator bit = ::markers_dict.begin();
+	std::map<unsigned int,AlvarMarker>::iterator eit = ::markers_dict.end();
 	
 	ROS_INFO_STREAM("Printing out all of the stored markers...\n\n");
 		

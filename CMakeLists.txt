@@ -131,3 +131,10 @@ target_link_libraries(gripper_state_translator
 )
 add_dependencies(gripper_state_translator ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
 
+add_executable(debugger nodes/debugger.cpp)
+target_link_libraries(gripper_state_translator
+	${catkin_LIBRARIES}
+	pthread
+	ar_blocks
+)
+add_dependencies(debugger ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
