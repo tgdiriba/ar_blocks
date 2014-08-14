@@ -30,16 +30,16 @@ std::string ARBlock::getStringId()
 
 void ARBlock::printInfo()
 {
-	std::cout << "Block " << id_ << " Pose:" << std::endl;
-	std::cout << "\tPosition: " << std::endl;
-	std::cout << "\t\tx: " << pose_.position.x << std::endl;
-	std::cout << "\t\ty: " << pose_.position.y << std::endl;
-	std::cout << "\t\tz: " << pose_.position.z << std::endl;
-	std::cout << "\tOrientation: " << std::endl;
-	std::cout << "\t\tx: " << pose_.orientation.x << std::endl;
-	std::cout << "\t\ty: " << pose_.orientation.y << std::endl;
-	std::cout << "\t\tz: " << pose_.orientation.z << std::endl;
-	std::cout << "\t\tw: " << pose_.orientation.w << std::endl;
+	ROS_INFO_STREAM("Block " << id_ << " Pose:");
+	ROS_INFO_STREAM("\tPosition: ");
+	ROS_INFO_STREAM("\t\tx: " << pose_.position.x);
+	ROS_INFO_STREAM("\t\ty: " << pose_.position.y);
+	ROS_INFO_STREAM("\t\tz: " << pose_.position.z);
+	ROS_INFO_STREAM("\tOrientation: ");
+	ROS_INFO_STREAM("\t\tx: " << pose_.orientation.x);
+	ROS_INFO_STREAM("\t\ty: " << pose_.orientation.y);
+	ROS_INFO_STREAM("\t\tz: " << pose_.orientation.z);
+	ROS_INFO_STREAM("\t\tw: " << pose_.orientation.w);
 }
 
 moveit_msgs::CollisionObject ARBlock::toCollisionObject(std::string planning_frame)

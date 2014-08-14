@@ -1,6 +1,7 @@
 #ifndef ARBLOCK_H
 #define ARBLOCK_H
 
+#include <ros/console.h>
 #include <geometry_msgs/Pose.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <sstream>

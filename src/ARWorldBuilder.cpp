@@ -78,11 +78,13 @@ ARWorldBuilder::~ARWorldBuilder()
 
 void ARWorldBuilder::printInfo()
 {
+	pthread_mutex_lock(&ar_blocks_mutex_);
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 	for( ; it != end; it++ ) {
 		it->second.printInfo();
 	}	
+	pthread_mutex_unlock(&ar_blocks_mutex_);
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -184,7 +186,9 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 	
 	// Perform Kalman Filtering
 	// filterBlocks();
-
+	ROS_INFO("CALLBACK REACHED");	
+	printInfo();
+	
 	pthread_mutex_unlock(&ar_blocks_mutex_);
 }
 
@@ -213,7 +217,7 @@ void ARWorldBuilder::updateWorld()
 		std::stringstream ss;
 		ss << it->second.id_;
 		visual_tools_->publishCollisionBlock( it->second.pose_, ss.str(), it->second.dimensions_.x );
-		it->second.printInfo();
+		// it->second.printInfo();
 	}
 }
 

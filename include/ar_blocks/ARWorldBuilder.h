@@ -50,6 +50,7 @@ public:
 	pthread_mutex_t ar_blocks_mutex_;
 	
 	ros::NodeHandle nh_;
+	ros::Publisher ar_collision_pub_;
 	ros::Subscriber ar_pose_marker_sub_;
 	std::map<unsigned int,ARBlock> ar_blocks_;
 
