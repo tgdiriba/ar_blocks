@@ -3,7 +3,6 @@
 
 #include <ros/ros.h>
 #include <ros/console.h>
-// #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/move_group_interface/move_group.h>
 #include <moveit_msgs/CollisionObject.h>
@@ -19,17 +18,20 @@
 #include <shape_msgs/SolidPrimitive.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
-#include <map>
-#include <deque>
-#include <string>
-#include <sstream>
-#include <pthread.h>
 #include <ar_track_alvar/AlvarMarkers.h>
 #include <ar_track_alvar/AlvarMarker.h>
 #include <ar_track_alvar/Filter.h>
 #include <ar_track_alvar/Kalman.h>
 #include <ar_track_alvar/Platform.h>
 #include <ar_track_alvar/AlvarException.h>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread/mutex.hpp>
+#include <map>
+#include <deque>
+#include <string>
+#include <sstream>
+#include <pthread.h>
 #include <ar_blocks/ARBlock.h>
 
 namespace nxr {
@@ -45,9 +47,12 @@ public:
 	
 	void createOrderedStack();
 	
-	static void *updateThread(void *td);
-	std::deque<pthread_t> thread_ids_;
-	pthread_mutex_t ar_blocks_mutex_;
+	void updateThread();
+	boost::thread_group tg_;
+	std::deque<boost::thread*> threads_;
+	boost::mutex ar_blocks_mutex_;
+	/*std::deque<pthread_t> thread_ids_;
+	pthread_mutex_t ar_blocks_mutex_;*/
 	
 	ros::NodeHandle nh_;
 	ros::Publisher collision_object_pub_;

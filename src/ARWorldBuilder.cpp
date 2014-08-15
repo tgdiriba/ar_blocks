@@ -23,7 +23,7 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	right_arm_.setPlanningTime(30);
 	
 	// Setup moveit_simple_grasps
-	if( !left_grasp_data_.loadRobotGraspData(nh_, "left_hand") || ! right_grasp_data_.loadRobotGraspData(nh_, "right_hand"))
+	if( !left_grasp_data_.loadRobotGraspData(nh_, "left_hand") || !right_grasp_data_.loadRobotGraspData(nh_, "right_hand"))
 		ros::shutdown();
 
 	ROS_INFO("Successfully loaded the robot's end-effector data...");
@@ -55,10 +55,8 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	right_arm_.setSupportSurfaceName("table");
 
 	// Initialize threads
-	pthread_mutex_init(&ar_blocks_mutex_, NULL);
-	thread_ids_.push_back( pthread_t() );
 	ROS_INFO("Spawning worker threads...");
-	pthread_create(&thread_ids_.back(), static_cast<pthread_attr_t*>(NULL), updateThread, static_cast<void*>(this));
+	threads_.push_back(tg_.create_thread( boost::bind(&ARWorldBuilder::updateThread, this) ));
 	
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
 }
@@ -67,26 +65,21 @@ ARWorldBuilder::~ARWorldBuilder()
 {
 	// Clean up threads
 	ROS_INFO("Destroying worker threads...");
-	deque<pthread_t>::iterator it = thread_ids_.begin();
-	deque<pthread_t>::iterator end = thread_ids_.end();
+
+	tg_.join_all();	
 	
-	for( ; it != end; it++ ) {
-		pthread_join(*it, NULL);
-	}
-	
-	pthread_mutex_destroy(&ar_blocks_mutex_);
 	ROS_INFO("All cleaned up.");
 }
 
 void ARWorldBuilder::printInfo()
 {
-	pthread_mutex_lock(&ar_blocks_mutex_);
+	boost::mutex::scoped_lock l(ar_blocks_mutex_);
+	
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 	for( ; it != end; it++ ) {
 		it->second.printInfo();
 	}	
-	pthread_mutex_unlock(&ar_blocks_mutex_);
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -94,9 +87,6 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	// Setup the pose's positional filter
 	ar_blocks_filtered_.insert(pair<unsigned int, KalmanSensor>(block_id,KalmanSensor(6,3)));
 	ar_blocks_kalman_.insert(pair<unsigned int, Kalman>(block_id,Kalman(6)));
-	// ar_blocks_filtered_.find(block_id)->second = KalmanSensor(6,3);
-	// ar_blocks_kalman_.find(block_id)->second = Kalman(6);
-	
 	
 	cvZero(ar_blocks_filtered_.find(block_id)->second.H);
 	cvmSet(ar_blocks_filtered_.find(block_id)->second.H,0,0,1);
@@ -119,11 +109,8 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	
 	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second.P,cvScalar(100));
 
-	// cvmSet(ar_blocks_filtered_.find(block_id)->second.z,0,0,x);
-	// cvmSet(ar_blocks_filtered_.find(block_id)->second.z,1,0,y);
-	// cvmSet(ar_blocks_filtered_.find(block_id)->second.z,2,0,z);
-	
 	// Setup the pose's orientational filter
+	
 }
 
 void ARWorldBuilder::filterBlocks()
@@ -149,31 +136,24 @@ void ARWorldBuilder::createOrderedStack()
 	
 }
 
-void *ARWorldBuilder::updateThread(void *td)
+void ARWorldBuilder::updateThread()
 {
-	ARWorldBuilder *my_world = static_cast<ARWorldBuilder*>(td);
-	
 	ROS_INFO("Update world thread successfully created.");
 	ros::NodeHandle nh;
 	ros::Rate loop_rate(30);
 
 	while( ros::ok() ) {
 		// Update world by iterating over the ar_blocks_
-		pthread_mutex_lock(&my_world->ar_blocks_mutex_);
-		my_world->updateWorld();
-		pthread_mutex_unlock(&my_world->ar_blocks_mutex_);		
+		updateWorld();
 
 		loop_rate.sleep();
 		ros::spinOnce();
 	}
-
-	pthread_exit(NULL);
 }
 
 void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::ConstPtr& markers_msg)
 {
-
-	pthread_mutex_lock(&ar_blocks_mutex_);
+	ar_blocks_mutex_.lock();
 
 	for(int i = 0; i < markers_msg->markers.size(); i++) {
 		// Use a cutoff confidence, by default this is 0
@@ -189,9 +169,10 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 	// Perform Kalman Filtering
 	// filterBlocks();
 	ROS_INFO("CALLBACK REACHED");	
-	printInfo();
 	
-	pthread_mutex_unlock(&ar_blocks_mutex_);
+	ar_blocks_mutex_.unlock();
+	
+	printInfo();
 }
 
 void ARWorldBuilder::setupCageEnvironment()
@@ -211,15 +192,14 @@ void ARWorldBuilder::setupCageEnvironment()
 
 void ARWorldBuilder::updateWorld()
 {
+	boost::mutex::scoped_lock l(ar_blocks_mutex_);
+	
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		 collision_object_pub_.publish( it->second.toCollisionObject() );
-		/*std::stringstream ss;
-		ss << it->second.id_;
-		visual_tools_->publishCollisionBlock( it->second.pose_, ss.str(), it->second.dimensions_.x );
-		*/// it->second.printInfo();
+		// collision_object_pub_.publish( it->second.toCollisionObject() );
+		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
 	}
 }
 
@@ -241,7 +221,7 @@ void ARWorldBuilder::primaryTest()
 	cin >> state;
 	
 	if(state == 'y') {
-		pthread_mutex_lock(&ar_blocks_mutex_);
+		ar_blocks_mutex_.lock();
 		
 		map<unsigned int, ARBlock>::iterator sit = ar_blocks_.begin();
 		map<unsigned int, ARBlock>::iterator eit = ar_blocks_.end();
@@ -327,7 +307,7 @@ void ARWorldBuilder::primaryTest()
 		}
 		else ROS_ERROR("Failed to pick up block.");
 		
-		pthread_mutex_unlock(&ar_blocks_mutex_);
+		ar_blocks_mutex_.unlock();
 	}
 	else {
 		cout << endl << "Terminating Primary Test Routine..." << endl;
