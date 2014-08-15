@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 	
-	<remap from="ar_pose_marker" to="nxr_ar_blocks/ar_pose_marker" />
+	<remap from="ar_pose_marker" to="ar_blocks_environment/ar_pose_marker" />
 	
 	<include file="$(find ar_track_alvar)/launch/baxter_indiv_no_xtion.launch" />	
 	
