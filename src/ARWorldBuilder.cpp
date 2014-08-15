@@ -128,6 +128,8 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 
 void ARWorldBuilder::filterBlocks()
 {
+	pthread_mutex_lock(&ar_blocks_mutex_);
+	
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 	for( ; it != end; it++ ) {
@@ -140,6 +142,7 @@ void ARWorldBuilder::filterBlocks()
 		ar_blocks_kalman_.find(it->first)->second.predict_update(&(ar_blocks_filtered_.find(it->first)->second), ar_blocks_timestamps_[it->first] - time_now);
 		ar_blocks_timestamps_[it->first] = time_now;
 	}
+	pthread_mutex_unlock(&ar_blocks_mutex_);
 }
 
 void ARWorldBuilder::createOrderedStack()
@@ -177,7 +180,7 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 
 	for(int i = 0; i < markers_msg->markers.size(); i++) {
 		// Use a cutoff confidence, by default this is 0
-		if( markers_msg->markers[i].confidence >= cutoff_confidence_ ) {
+		if( markers_msg->markers[i].confidence >= cutoff_confidence_ && markers_msg->markers[i].id != 0) {
 			// Eventually differentiate the different marker types
 			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end())
 				// addBaseKalmanFilter(markers_msg->markers[i].id);
@@ -186,18 +189,20 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 		}
 	}
 	
-	// Perform Kalman Filtering
-	// filterBlocks();
 	ROS_INFO("CALLBACK REACHED");	
-	printInfo();
 	
 	pthread_mutex_unlock(&ar_blocks_mutex_);
+	
+	// Perform Kalman Filtering
+	// filterBlocks();
+	printInfo();
+	
 }
 
 void ARWorldBuilder::setupCageEnvironment()
 {
 	ROS_INFO("Setting up the cage environment...");
-
+	
 	// Setup the table
 	ROS_INFO("Adding table to the cage environment scene...");
 	visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), 0.5842 - (g_table_dimensions[1]/2), 0.0, g_table_dimensions[1], g_table_dimensions[0], g_table_dimensions[2], "table");
@@ -206,7 +211,7 @@ void ARWorldBuilder::setupCageEnvironment()
 	
 	ROS_INFO("Waiting for published collision objects to be registered...");
 	// ros::Duration(2.0).sleep();
-
+	
 }
 
 void ARWorldBuilder::updateWorld()
@@ -215,11 +220,8 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		 collision_object_pub_.publish( it->second.toCollisionObject() );
-		/*std::stringstream ss;
-		ss << it->second.id_;
-		visual_tools_->publishCollisionBlock( it->second.pose_, ss.str(), it->second.dimensions_.x );
-		*/// it->second.printInfo();
+		// collision_object_pub_.publish( it->second.toCollisionObject() );
+		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
 	}
 }
 
