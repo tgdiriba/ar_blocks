@@ -161,8 +161,8 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 		if( markers_msg->markers[i].confidence >= cutoff_confidence_  && markers_msg->markers[i].id != 0 ) {
 			// Eventually differentiate the different marker types
 			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end()) {
-				addBaseKalmanFilter(markers_msg->markers[i].id);
 				ar_blocks_[ markers_msg->markers[i].id ].id_ = markers_msg->markers[i].id;
+				// addBaseKalmanFilter(markers_msg->markers[i].id);
 			}
 			
 			ar_blocks_[ markers_msg->markers[i].id ].pose_ = markers_msg->markers[i].pose.pose;
@@ -170,7 +170,7 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 	}
 	
 	// Perform Kalman Filtering
-	filterBlocks();
+	// filterBlocks();
 	
 	ar_blocks_mutex_.unlock();
 }
@@ -194,17 +194,23 @@ void ARWorldBuilder::updateWorld()
 {
 	boost::mutex::scoped_lock l(ar_blocks_mutex_);
 	
-	map<unsigned int,Kalman>::iterator it = ar_blocks_kalman_.begin();
-	map<unsigned int,Kalman>::iterator end = ar_blocks_kalman_.end();	
+	// map<unsigned int,Kalman>::iterator it = ar_blocks_kalman_.begin();
+	// map<unsigned int,Kalman>::iterator end = ar_blocks_kalman_.end();	
+	
+	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
+	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		ARBlock block(it->first, it->second);
+		// ARBlock block(it->first, it->second);
 		// Ignore the orientation kalman filter for now
-		block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
+		// block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
 		
 		// collision_object_pub_.publish( it->second.toCollisionObject() );
-		// visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
-		visual_tools_->publishCollisionBlock( block.pose_, block.getStringId(), block.dimensions_.x );
+		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
+		
+		// Block Info
+		// block.printInfo();
+		//visual_tools_->publishCollisionBlock( block.pose_, block.getStringId(), block.dimensions_.x );
 	}
 }
 

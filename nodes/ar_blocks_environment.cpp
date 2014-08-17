@@ -9,6 +9,11 @@ using namespace moveit;
 using namespace std;
 using namespace nxr;
 
+void debugger(const ros::TimerEvent& te)
+{
+	ROS_INFO("WORKING");
+}
+
 int main(int argc, char **argv)
 {
 	ros::init( argc, argv, "nxr_ar_blocks" );
@@ -35,7 +40,8 @@ int main(int argc, char **argv)
 		
 	ARWorldBuilder block_world;
 	ROS_INFO("Successfully built AR World...");
-	block_world.runAllTests();
+	// block_world.runAllTests();
+	ros::Timer t = nh.createTimer(ros::Duration(0.2), debugger);
 	
 	ros::AsyncSpinner spinner(2);
 	spinner.start();
