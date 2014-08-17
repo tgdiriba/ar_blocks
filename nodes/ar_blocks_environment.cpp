@@ -35,17 +35,12 @@ int main(int argc, char **argv)
 		
 	ARWorldBuilder block_world;
 	ROS_INFO("Successfully built AR World...");
-	// block_world.runAllTests();
+	block_world.runAllTests();
 	
 	ros::AsyncSpinner spinner(2);
 	spinner.start();
 	
-	while(true) {
-		ROS_INFO("\n\nPrinting out world info..");
-		block_world.printInfo();
-		ros::Duration(1.0).sleep();
-	}
-	// ros::waitForShutdown();
+	ros::waitForShutdown();
 	
 	return 0;
 }

@@ -157,22 +157,21 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 
 	for(int i = 0; i < markers_msg->markers.size(); i++) {
 		// Use a cutoff confidence, by default this is 0
-		if( markers_msg->markers[i].confidence >= cutoff_confidence_ ) {
+		if( markers_msg->markers[i].confidence >= cutoff_confidence_  && markers_msg->markers[i].id != 0 ) {
 			// Eventually differentiate the different marker types
-			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end())
-				// addBaseKalmanFilter(markers_msg->markers[i].id);
+			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end()) {
+				addBaseKalmanFilter(markers_msg->markers[i].id);
+				ar_blocks_[ markers_msg->markers[i].id ].id_ = markers_msg->markers[i].id;
+			}
 			
 			ar_blocks_[ markers_msg->markers[i].id ].pose_ = markers_msg->markers[i].pose.pose;
 		}
 	}
 	
 	// Perform Kalman Filtering
-	// filterBlocks();
-	ROS_INFO("CALLBACK REACHED");	
+	filterBlocks();
 	
 	ar_blocks_mutex_.unlock();
-	
-	printInfo();
 }
 
 void ARWorldBuilder::setupCageEnvironment()
@@ -194,11 +193,12 @@ void ARWorldBuilder::updateWorld()
 {
 	boost::mutex::scoped_lock l(ar_blocks_mutex_);
 	
-	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
-	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
+	map<unsigned int,Kalman>::iterator it = ar_blocks_kalman_.begin();
+	map<unsigned int,Kalman>::iterator end = ar_blocks_kalman_.end();	
 
 	for( ; it != end; it++ ) {
 		// collision_object_pub_.publish( it->second.toCollisionObject() );
+		// visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
 		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
 	}
 }
@@ -237,9 +237,14 @@ void ARWorldBuilder::primaryTest()
 			std::string planning_group = (left_side) ? ("left_arm") : ("right_arm");
 			
 			grasps.clear();
+			cout << "Created block grasps for block " << sit->second.id_ << "..." << endl;
 			grasper->generateBlockGrasps( sit->second.pose_, gdata, grasps );
+			
+			cout << "Starting up grasp filtering for block " << sit->second.id_ << "..." << endl;
 			grasp_filter_->filterGrasps( grasps, ik, true, gdata.ee_parent_link_, planning_group );
+			cout << "Publishing animated grasps..." << endl;
 			visual_tools_->publishAnimatedGrasps( grasps, gdata.ee_parent_link_ );
+			cout << "Publishing IK solutions..." << endl;
 			visual_tools_->publishIKSolutions( ik, planning_group, 0.25 );
 
 			final_block = sit->second;

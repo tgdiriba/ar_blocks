@@ -30,7 +30,7 @@ std::string ARBlock::getStringId()
 
 void ARBlock::printInfo()
 {
-	ROS_INFO_STREAM("Block " << id_ << " Pose:");
+	ROS_INFO_STREAM("Block " << getStringId() << " Pose:");
 	ROS_INFO_STREAM("\tPosition: ");
 	ROS_INFO_STREAM("\t\tx: " << pose_.position.x);
 	ROS_INFO_STREAM("\t\ty: " << pose_.position.y);
