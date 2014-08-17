@@ -4,6 +4,8 @@
 #include <ros/console.h>
 #include <geometry_msgs/Pose.h>
 #include <moveit_msgs/CollisionObject.h>
+#include <ar_track_alvar/Filter.h>
+#include <ar_track_alvar/Kalman.h>
 #include <sstream>
 #include <string>
 
@@ -28,8 +30,10 @@ class ARBlock {
 public:
 	
 	ARBlock(unsigned int b_type = BLOCK_A);
+	ARBlock(unsigned int id, const alvar::Kalman &k);
 	ARBlock(float *dims, int id = 0);	
 	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("base"));	
+	alvar::Kalman toKalman();
 	std::string getStringId();
 
 	geometry_msgs::Pose pose_;

@@ -115,13 +115,14 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 
 void ARWorldBuilder::filterBlocks()
 {
-	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
-	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
-	for( ; it != end; it++ ) {
-		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,0,0,it->second.pose_.position.x);
-		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,1,0,it->second.pose_.position.y);
-		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,2,0,it->second.pose_.position.z);
+	map<unsigned int,Kalman>::iterator it = ar_blocks_kalman_.begin();
+	map<unsigned int,Kalman>::iterator end = ar_blocks_kalman_.end();	
 	
+	for( ; it != end; it++ ) {
+		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,0,0,ar_blocks_.find(it->first)->second.pose_.position.x);
+		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,1,0,ar_blocks_.find(it->first)->second.pose_.position.y);
+		cvmSet(ar_blocks_filtered_.find(it->first)->second.z,2,0,ar_blocks_.find(it->first)->second.pose_.position.z);
+		
 		// Modify the time stamps and perform predict and update
 		unsigned long long time_now = ros::Time::now().toNSec();
 		ar_blocks_kalman_.find(it->first)->second.predict_update(&(ar_blocks_filtered_.find(it->first)->second), ar_blocks_timestamps_[it->first] - time_now);
@@ -197,9 +198,13 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,Kalman>::iterator end = ar_blocks_kalman_.end();	
 
 	for( ; it != end; it++ ) {
+		ARBlock block(it->first, it->second);
+		// Ignore the orientation kalman filter for now
+		block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
+		
 		// collision_object_pub_.publish( it->second.toCollisionObject() );
 		// visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
-		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
+		visual_tools_->publishCollisionBlock( block.pose_, block.getStringId(), block.dimensions_.x );
 	}
 }
 

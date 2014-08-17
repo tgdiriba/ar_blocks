@@ -14,6 +14,21 @@ ARBlock::ARBlock(unsigned int b_type) : block_type_(b_type)
 		dimensions_.x = dimensions_.y = dimensions_.z = g_block_sizes[block_type_];
 }
 
+ARBlock::ARBlock(unsigned int id, const alvar::Kalman &k) 
+	: block_type_(BLOCK_A),
+	  id_(id)
+{
+	// POSE DEFAULT VALUES ARE ALL ZERO
+	pose_.position.x = cvmGet(k.x,0,0);
+	pose_.position.y = cvmGet(k.x,1,0);
+	pose_.position.z = cvmGet(k.x,2,0);
+	pose_.orientation.x = 0.0;
+	pose_.orientation.y = 0.0;
+	pose_.orientation.z = 0.0;
+	pose_.orientation.w = 1.0;
+	
+}
+
 ARBlock::ARBlock(float *dims, int id) : id_(id)
 {
 	dimensions_.x = dims[0];
@@ -40,6 +55,11 @@ void ARBlock::printInfo()
 	ROS_INFO_STREAM("\t\ty: " << pose_.orientation.y);
 	ROS_INFO_STREAM("\t\tz: " << pose_.orientation.z);
 	ROS_INFO_STREAM("\t\tw: " << pose_.orientation.w);
+}
+
+alvar::Kalman toKalman()
+{
+	return alvar::Kalman(4);
 }
 
 moveit_msgs::CollisionObject ARBlock::toCollisionObject(std::string planning_frame)
