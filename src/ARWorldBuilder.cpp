@@ -88,7 +88,7 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	ar_blocks_filtered_.insert(pair<unsigned int, KalmanSensor>(block_id,KalmanSensor(6,3)));
 	ar_blocks_kalman_.insert(pair<unsigned int, Kalman>(block_id,Kalman(6)));
 	
-	cvZero(ar_blocks_filtered_.find(block_id)->second.H);
+	/*cvZero(ar_blocks_filtered_.find(block_id)->second.H);
 	cvmSet(ar_blocks_filtered_.find(block_id)->second.H,0,0,1);
 	cvmSet(ar_blocks_filtered_.find(block_id)->second.H,1,1,1);
 	cvmSet(ar_blocks_filtered_.find(block_id)->second.H,2,2,1);
@@ -108,7 +108,7 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	cvmSet(ar_blocks_kalman_.find(block_id)->second.Q,5,5,0.00001);
 	
 	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second.P,cvScalar(100));
-
+*/
 	// Setup the pose's orientational filter
 	
 }
@@ -141,12 +141,12 @@ void ARWorldBuilder::updateThread()
 {
 	ROS_INFO("Update world thread successfully created.");
 	ros::NodeHandle nh;
-	ros::Rate loop_rate(30);
+	ros::Rate loop_rate(2);
 
-	while( ros::ok() ) {
+	while( true ) {
 		// Update world by iterating over the ar_blocks_
 		updateWorld();
-
+		//ROS_INFO("UPDATING THE WORLD");
 		loop_rate.sleep();
 		ros::spinOnce();
 	}
@@ -162,10 +162,11 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 			// Eventually differentiate the different marker types
 			if(ar_blocks_.find(markers_msg->markers[i].id) == ar_blocks_.end()) {
 				ar_blocks_[ markers_msg->markers[i].id ].id_ = markers_msg->markers[i].id;
-				// addBaseKalmanFilter(markers_msg->markers[i].id);
+				//addBaseKalmanFilter(markers_msg->markers[i].id);
 			}
 			
 			ar_blocks_[ markers_msg->markers[i].id ].pose_ = markers_msg->markers[i].pose.pose;
+			//ar_blocks_[ markers_msg->markers[i].id ].printInfo();
 		}
 	}
 	
@@ -209,7 +210,7 @@ void ARWorldBuilder::updateWorld()
 		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
 		
 		// Block Info
-		// block.printInfo();
+	 	//it->second.printInfo();
 		//visual_tools_->publishCollisionBlock( block.pose_, block.getStringId(), block.dimensions_.x );
 	}
 }
