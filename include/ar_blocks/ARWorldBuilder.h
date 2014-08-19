@@ -24,6 +24,7 @@
 #include <ar_track_alvar/Kalman.h>
 #include <ar_track_alvar/Platform.h>
 #include <ar_track_alvar/AlvarException.h>
+#include <baxter_core_msgs/HeadPanCommand.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
@@ -53,6 +54,8 @@ public:
 	boost::mutex ar_blocks_mutex_;
 	/*std::deque<pthread_t> thread_ids_;
 	pthread_mutex_t ar_blocks_mutex_;*/
+  
+  void scanEnvironment();
 	
 	ros::NodeHandle nh_;
 	ros::Publisher collision_object_pub_;

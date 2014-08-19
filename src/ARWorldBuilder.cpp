@@ -82,6 +82,62 @@ void ARWorldBuilder::printInfo()
 	}	
 }
 
+void scanEnvironment()
+{
+  // Clear the block memory
+  ar_blocks_mutex_.lock()
+  ar_blocks_.clear();
+  ar_blocks_mutex_.unlock();
+  
+  vector<geometry_msgs::Pose> points;
+  geometry_msgs::Pose p1;
+  p1.position.x = 1;
+  p1.position.y = 1;
+  p1.position.z = 1;
+  p1.orientation.x = 1;
+  p1.orientation.y = 1;
+  p1.orientation.z = 1;
+  p1.orientation.w = 1;
+  points.push_back(p1);
+
+  geometry_msgs::Pose p2;
+  p2.position.x = 1;
+  p2.position.y = 1;
+  p2.position.z = 1;
+  p2.orientation.x = 1;
+  p2.orientation.y = 1;
+  p2.orientation.z = 1;
+  p2.orientation.w = 1;
+  points.push_back(p2);
+  
+  geometry_msgs::Pose p3;
+  p3.position.x = 1;
+  p3.position.y = 1;
+  p3.position.z = 1;
+  p3.orientation.x = 1;
+  p3.orientation.y = 1;
+  p3.orientation.z = 1;
+  p3.orientation.w = 1;
+  points.push_back(p3);
+  
+  moveit_msgs::RobotTrajectory rt;
+  double fraction = left_arm_.computeCartesianPath(points, 0.01, 0.0, rt);
+  left_arm_.move();
+  
+  /*ros::Publisher head_control = nh_.advertise<baxter_core_msgs::HeadPanCommand>("/robot/head/command_head_pan", 60);
+  
+  baxter_core_msgs::HeadPanCommand hpc;
+  hpc.target = 0;
+  hpc.speed = 50;
+  head_control.publish(hpc);
+  ros::Duration(3.0).sleep();
+  hpc.target = 100;
+  head_control.publish(hpc);
+  ros::Duration(6.0).sleep();*/
+  
+  
+}
+
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 {
 	// Setup the pose's positional filter
