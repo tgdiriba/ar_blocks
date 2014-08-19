@@ -28,6 +28,7 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <deque>
 #include <string>
@@ -36,6 +37,10 @@
 #include <ar_blocks/ARBlock.h>
 
 namespace nxr {
+
+typedef ull unsigned long long;
+typedef KalmanSensorPtr boost::shared_ptr<alvar::KalmanSensor>;
+typedef KalmanPtr boost::shared_ptr<alvar::Kalman>;
 
 class ARWorldBuilder {
 public:
@@ -52,8 +57,6 @@ public:
 	boost::thread_group tg_;
 	std::deque<boost::thread*> threads_;
 	boost::mutex ar_blocks_mutex_;
-	/*std::deque<pthread_t> thread_ids_;
-	pthread_mutex_t ar_blocks_mutex_;*/
   
   void scanEnvironment();
 	
@@ -63,9 +66,9 @@ public:
 	std::map<unsigned int,ARBlock> ar_blocks_;
 
 	// Filters
-	std::map<unsigned int,alvar::KalmanSensor> ar_blocks_filtered_;
-	std::map<unsigned int,alvar::Kalman> ar_blocks_kalman_;
-	std::map<unsigned int,unsigned long long> ar_blocks_timestamps_;
+	std::map< unsigned int, boost::shared_ptr<alvar::KalmanSensor> > ar_blocks_filtered_;
+	std::map< unsigned int, boost::shared_ptr<alvar::Kalman> > ar_blocks_kalman_;
+	std::map<unsigned int, std::pair<ull, ull> > ar_blocks_timestamps_;
 	void addBaseKalmanFilter(unsigned int);
 	void filterBlocks();
 	
