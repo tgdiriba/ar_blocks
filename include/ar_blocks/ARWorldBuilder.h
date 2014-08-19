@@ -38,9 +38,9 @@
 
 namespace nxr {
 
-typedef ull unsigned long long;
-typedef KalmanSensorPtr boost::shared_ptr<alvar::KalmanSensor>;
-typedef KalmanPtr boost::shared_ptr<alvar::Kalman>;
+typedef unsigned long long ull;
+typedef boost::shared_ptr<alvar::KalmanSensor> KalmanSensorPtr;
+typedef boost::shared_ptr<alvar::Kalman> KalmanPtr;
 
 class ARWorldBuilder {
 public:

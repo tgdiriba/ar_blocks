@@ -6,7 +6,6 @@ using namespace alvar;
 using namespace moveit;
 using namespace std;
 using boost::shared_ptr;
-using boost::mutex::scoped_lock;
 
 static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
 // static const float g_table_position[3] = { 0.608012, 1.21602, 0.60325 };
@@ -75,7 +74,7 @@ ARWorldBuilder::~ARWorldBuilder()
 
 void ARWorldBuilder::printInfo()
 {
-	scoped_lock l(ar_blocks_mutex_);
+	boost::mutex::scoped_lock l(ar_blocks_mutex_);
 	
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
@@ -84,10 +83,10 @@ void ARWorldBuilder::printInfo()
 	}	
 }
 
-void scanEnvironment()
+void ARWorldBuilder::scanEnvironment()
 {
   // Clear the block memory
-  ar_blocks_mutex_.lock()
+  ar_blocks_mutex_.lock();
   ar_blocks_.clear();
   ar_blocks_mutex_.unlock();
   
@@ -143,10 +142,10 @@ void scanEnvironment()
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 {
 	// Setup the pose's positional filter
-	ar_blocks_filtered_.insert(pair<unsigned int, shared_ptr<KalmanSensor> >(block_id, new KalmanSensor(6,3)));
-	ar_blocks_kalman_.insert(pair<unsigned int, shared_ptr<Kalman> >(block_id, new Kalman(6)));
+	ar_blocks_filtered_.insert(pair<unsigned int, KalmanSensorPtr>(block_id, KalmanSensorPtr(new KalmanSensor(6,3)) ));
+	ar_blocks_kalman_.insert(pair<unsigned int, KalmanPtr>(block_id, KalmanPtr(new Kalman(6)) ));
 	
-	/*cvZero(ar_blocks_filtered_.find(block_id)->second->H);
+	cvZero(ar_blocks_filtered_.find(block_id)->second->H);
 	cvmSet(ar_blocks_filtered_.find(block_id)->second->H,0,0,1);
 	cvmSet(ar_blocks_filtered_.find(block_id)->second->H,1,1,1);
 	cvmSet(ar_blocks_filtered_.find(block_id)->second->H,2,2,1);
@@ -166,15 +165,15 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,5,5,0.00001);
 	
 	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second->P,cvScalar(100));
-*/
+
 	// Setup the pose's orientational filter
 	
 }
 
 void ARWorldBuilder::filterBlocks()
 {
-	map<unsigned int, KalmanPtr>::iterator it = ar_blocks_kalman_.begin();
-	map<unsigned int, KalmanPtr>::iterator end = ar_blocks_kalman_.end();	
+	map<unsigned int, shared_ptr<Kalman> >::iterator it = ar_blocks_kalman_.begin();
+	map<unsigned int, shared_ptr<Kalman> >::iterator end = ar_blocks_kalman_.end();	
 	
 	for( ; it != end; it++ ) {
 		cvmSet(ar_blocks_filtered_.find(it->first)->second->z,0,0,ar_blocks_.find(it->first)->second.pose_.position.x);
@@ -221,13 +220,13 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 			// Eventually differentiate the different marker types
 			if(ar_blocks_.find(block_id) == ar_blocks_.end()) {
 				ar_blocks_[ block_id ].id_ = markers_msg->markers[i].id;
-        ar_blocks_timestamps_[ block_id ] = pair<ull, ull>(ros::Time::now().toNSec(), ros::Time::now().toNSec());
-				//addBaseKalmanFilter(block_id);
+        			ar_blocks_timestamps_[ block_id ] = pair<ull, ull>(ros::Time::now().toNSec(), ros::Time::now().toNSec());
+				addBaseKalmanFilter(block_id);
 			}
 			
 			ar_blocks_[ block_id ].pose_ = markers_msg->markers[i].pose.pose;
-      ar_blocks_timestamps_[ block_id ].first = ar_blocks_timestamps_[ block_id ];
-      ar_blocks_timestamps_[ block_id ].second = ros::Time::now().toNSec();
+      			ar_blocks_timestamps_[ block_id ].first = ar_blocks_timestamps_[ block_id ].second;
+      			ar_blocks_timestamps_[ block_id ].second = ros::Time::now().toNSec();
 			//ar_blocks_[ block_id ].printInfo();
 		}
 	}
@@ -255,7 +254,7 @@ void ARWorldBuilder::setupCageEnvironment()
 
 void ARWorldBuilder::updateWorld()
 {
-	scoped_lock l(ar_blocks_mutex_);
+	boost::mutex::scoped_lock l(ar_blocks_mutex_);
 	
 	// map<unsigned int,Kalman>::iterator it = ar_blocks_kalman_.begin();
 	// map<unsigned int,Kalman>::iterator end = ar_blocks_kalman_.end();	
@@ -264,16 +263,18 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		// ARBlock block(it->first, it->second);
-		// Ignore the orientation kalman filter for now
-		// block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
-		
-		// collision_object_pub_.publish( it->second.toCollisionObject() );
-		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
-		
+		if(ar_blocks_kalman_.find(it->first) != ar_blocks_kalman_.end()) {
+			ARBlock block(it->first, ar_blocks_kalman_[it->first]);
+			// Ignore the orientation kalman filter for now
+			block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
+			visual_tools_->publishCollisionBlock( block.pose_, block.getStringId(), block.dimensions_.x );
+		}
+		else {	
+			// collision_object_pub_.publish( it->second.toCollisionObject() );
+			visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
+		}	
 		// Block Info
 	 	//it->second.printInfo();
-		//visual_tools_->publishCollisionBlock( block.pose_, block.getStringId(), block.dimensions_.x );
 	}
 }
 
@@ -305,10 +306,10 @@ void ARWorldBuilder::primaryTest()
 		bool left_side = true;
 		for( ; sit != eit; sit++) {
 			// Check which side the block is on
-			left_side = (sit->second.pose_.position.x <= 0) ? (true) : (false);
-			moveit_simple_grasps::SimpleGraspsPtr &grasper = (left_side) ? left_simple_grasps_ : right_simple_grasps_;
-			moveit_simple_grasps::GraspData &gdata = (left_side) ? left_grasp_data_ : right_grasp_data_;
-			std::string planning_group = (left_side) ? ("left_arm") : ("right_arm");
+			left_side = (sit->second.pose_.position.x > 0) ? (true) : (false);
+			moveit_simple_grasps::SimpleGraspsPtr &grasper = (!left_side) ? left_simple_grasps_ : right_simple_grasps_;
+			moveit_simple_grasps::GraspData &gdata = (!left_side) ? left_grasp_data_ : right_grasp_data_;
+			std::string planning_group = (!left_side) ? ("left_arm") : ("right_arm");
 			
 			grasps.clear();
 			cout << "Created block grasps for block " << sit->second.id_ << "..." << endl;
@@ -317,9 +318,9 @@ void ARWorldBuilder::primaryTest()
 			cout << "Starting up grasp filtering for block " << sit->second.id_ << "..." << endl;
 			grasp_filter_->filterGrasps( grasps, ik, true, gdata.ee_parent_link_, planning_group );
 			cout << "Publishing animated grasps..." << endl;
-			visual_tools_->publishAnimatedGrasps( grasps, gdata.ee_parent_link_ );
+			//visual_tools_->publishAnimatedGrasps( grasps, gdata.ee_parent_link_ );
 			cout << "Publishing IK solutions..." << endl;
-			visual_tools_->publishIKSolutions( ik, planning_group, 0.25 );
+			//visual_tools_->publishIKSolutions( ik, planning_group, 0.25 );
 
 			final_block = sit->second;
 		}
@@ -329,10 +330,11 @@ void ARWorldBuilder::primaryTest()
 		// Simply move the last block in the dictionary
 		cout << endl << endl << "Initiating the Pick and Place Test on block " << final_block.getStringId() << "..." << endl;
 		cout << "Attempting to transfer block from one side to the other..." << endl;
-		
+		cout << "Begin block pick-up routinte. Continue...";
+		cin >> state;	
 		cout << "Picking up block..." << endl;
-		move_group_interface::MoveGroup &mg = (left_side) ? (left_arm_) : (right_arm_);
-		moveit_simple_grasps::GraspData &gd = (left_side) ? (left_grasp_data_) : (right_grasp_data_);
+		move_group_interface::MoveGroup &mg = (!left_side) ? (left_arm_) : (right_arm_);
+		moveit_simple_grasps::GraspData &gd = (!left_side) ? (left_grasp_data_) : (right_grasp_data_);
 		// mg.setSupportSurfaceName("table"); DONE IN CONSTRUCTOR
 		if(mg.pick( final_block.getStringId(), grasps )) {
 			cout << "Successfully picked up block." << endl;

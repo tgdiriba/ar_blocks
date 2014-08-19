@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 		
 	ARWorldBuilder block_world;
 	ROS_INFO("Successfully built AR World...");
-	block_world.runAllTests();
+	//block_world.runAllTests();
 	//ros::Timer t = nh.createTimer(ros::Duration(0.2), debugger);
 	
 	ros::AsyncSpinner spinner(2);
