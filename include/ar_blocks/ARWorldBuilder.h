@@ -24,23 +24,49 @@
 #include <ar_track_alvar/Kalman.h>
 #include <ar_track_alvar/Platform.h>
 #include <ar_track_alvar/AlvarException.h>
+#include <tf/Transform.h>
+#include <tf/transform_datatypes.h>
 #include <baxter_core_msgs/HeadPanCommand.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
+#include <actionlib/server/simple_action_server.h>
 #include <map>
+#include <cmath>
 #include <deque>
 #include <string>
 #include <sstream>
 #include <pthread.h>
 #include <ar_blocks/ARBlock.h>
+#include <ar_blocks/BuildStructureAction.h>
 
 namespace nxr {
 
 typedef unsigned long long ull;
 typedef boost::shared_ptr<alvar::KalmanSensor> KalmanSensorPtr;
 typedef boost::shared_ptr<alvar::Kalman> KalmanPtr;
+
+struct Table {
+  double length;
+  double width;
+  double height;
+};
+
+struct Area {
+  double length;
+  double width;
+};
+
+struct Point {
+  double x;
+  double y;
+};
+
+struct Rectangle {
+  Point point;
+  Area area;
+};
 
 class ARWorldBuilder {
 public:
@@ -65,6 +91,28 @@ public:
 	ros::Subscriber ar_pose_marker_sub_;
 	std::map<unsigned int,ARBlock> ar_blocks_;
 
+  // Table Properties.
+  Table table_dimensions_;
+  geometry_msgs::Pose table_pose_;
+  Rectangle table_freezone_;
+  
+  // Block Handling
+  bool inFreeZone(ARBlock);
+  bool clearStage();
+  bool pickBlock(ARBlock &block);
+  bool pickFreeBlock();
+  bool isAreaClear(Rectangle r);
+  bool pointInRectangle(Rectangle r, Point p);
+  bool pointInRectangle(Rectangle r, vector<Point> pv);
+  vector<moveit_msgs::PlaceLocation> findFreeLocations();
+
+  // Action Handling
+  actionlib::SimpleActionServer ar_blocks_action_server_;
+  ar_blocks::BuildStructureGoal ar_blocks_goal_;
+  ar_blocks::BuildStructureFeedback ar_blocks_feedback_;
+  ar_blocks::BuildStructureResult ar_blocks_result_;
+  void actionServerCallback(const ar_blocks::BuildStructureGoalConstPtr &goal);
+
 	// Filters
 	std::map< unsigned int, boost::shared_ptr<alvar::KalmanSensor> > ar_blocks_filtered_;
 	std::map< unsigned int, boost::shared_ptr<alvar::Kalman> > ar_blocks_kalman_;
@@ -73,6 +121,7 @@ public:
 	void filterBlocks();
 	
 	unsigned int cutoff_confidence_;
+  double block_size_;
 
 	// MoveIt!
 	move_group_interface::MoveGroup left_arm_;

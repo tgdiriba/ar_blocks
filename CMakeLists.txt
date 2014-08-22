@@ -48,10 +48,32 @@ find_package(catkin
   dynamic_reconfigure
   cv_bridge
 	image_transport
+  
+  actionlib
+  actionlib_msgs
 )
 find_package(Boost REQUIRED)
 
 catkin_python_setup()
+
+add_message_files(
+  FILES
+  Block.msg
+  Layer.msg
+  Structure.msg
+)
+
+add_action_files(
+  DIRECTORY action FILES
+  BuildStructure.action
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  actionlib_msgs
+)
 
 catkin_package(
 	INCLUDE_DIRS include

@@ -9,6 +9,7 @@
 #include <boost/shared_ptr.hpp>
 #include <sstream>
 #include <string>
+#include <ar_blocks/Block.h>
 
 namespace nxr {
 
@@ -21,11 +22,11 @@ enum BLOCK_TYPE {
 
 // const float g_block_sizes[BLOCK_NUM]; // = { 0.063, 0.051, 0.045 };
 
-typedef struct _dimensions {
+struct Dimensions {
 	float x;
 	float y;
 	float z;
-} dimensions;
+};
 
 class ARBlock {
 public:
@@ -35,16 +36,20 @@ public:
 	ARBlock(float *dims, int id = 0);	
 	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("base"));	
 	alvar::Kalman toKalman();
+  ar_blocks::Block toBlockMsg();
 	std::string getStringId();
-
+  
 	geometry_msgs::Pose pose_;
+  ros::Time time_stamp_;
 	unsigned int block_type_; 
 	unsigned int id_;
 	
 	union {
 		float dims_[3];
-		dimensions dimensions_;
+		Dimensions dimensions_;
 	};
+  
+  static bool blockCompare(const ar_blocks::Block &a, const ar_blocks::Block &b);
 
 	// Debugging
 	void printInfo();

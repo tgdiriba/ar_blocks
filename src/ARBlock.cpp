@@ -46,6 +46,8 @@ std::string ARBlock::getStringId()
 void ARBlock::printInfo()
 {
 	ROS_INFO_STREAM("Block " << getStringId() << " Pose:");
+  ROS_INFO_STREAM("\tTime Stamp: ");
+  ROS_INFO_STREAM("\t\t: " << time_stamp_);
 	ROS_INFO_STREAM("\tPosition: ");
 	ROS_INFO_STREAM("\t\tx: " << pose_.position.x);
 	ROS_INFO_STREAM("\t\ty: " << pose_.position.y);
@@ -55,6 +57,18 @@ void ARBlock::printInfo()
 	ROS_INFO_STREAM("\t\ty: " << pose_.orientation.y);
 	ROS_INFO_STREAM("\t\tz: " << pose_.orientation.z);
 	ROS_INFO_STREAM("\t\tw: " << pose_.orientation.w);
+}
+
+ar_blocks::Block toBlockMsg()
+{
+  ar_blocks::Block t;
+  t.length = dimensions_.x;
+  t.width = dimensions_.y;
+  t.height = dimensions_.z;
+  t.id = id_;
+  t.pose_stamped.header.stamp = time_stamp_;
+  t.pose_stamped.header.frame_id = std::string("/base");
+  t.pose_stamped.pose = pose_;
 }
 
 alvar::Kalman toKalman()
@@ -84,6 +98,11 @@ moveit_msgs::CollisionObject ARBlock::toCollisionObject(std::string planning_fra
     block.operation = moveit_msgs::CollisionObject::ADD;
 		
 		return block;
+}
+
+static bool ARBlock::blockCompare(const ar_blocks::Block &a, const ar_blocks::Block &b)
+{
+   return a.pose_stamped.pose.position.y > b.pose_stamped.pose.position.y;
 }
 
 }
