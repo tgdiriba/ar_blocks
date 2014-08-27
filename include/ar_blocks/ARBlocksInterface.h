@@ -19,9 +19,7 @@ public:
   ARBlocksInterface();
 private:
   // Qt
-  QHBoxLayout *side_layout_;
-  QVBoxLayout *left_layout_;
-  QVBoxLayout *right_layout_;
+  QVBoxLayout *center_layout_;
   
   QHBoxLayout *viz2d_panel_;
   QHBoxLayout *viz2d_tools_;
@@ -30,8 +28,10 @@ private:
   QHBoxLayout *layer_count_layout_;
   QHBoxLayout *block_count_layout_;
   QHBoxLayout *stability_layout_;
+  QHBoxLayout *build_layout_;
   
   QLabel *left_panel_title_;
+  QComboBox *current_layer_cb_;
   QLabel *current_layer_;
   
   QLabel *block_size_label_;
