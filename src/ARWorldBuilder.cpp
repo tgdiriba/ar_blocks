@@ -209,18 +209,21 @@ void ARWorldBuilder::updateThread()
 	}
 }
 
-void ARWorldBuilder::inFreeZone(ARBlock block)
+bool ARWorldBuilder::inFreeZone(ARBlock block)
 {
   // Make sure that the block is within some threshold of the table height
   // Current threshold is +/- 2cm
-  double height_diff = (block.pose_.position.z - block.dimensions_.z) - table.height;
+  double height_diff = (block.pose_.position.z - block.dimensions_.z) - table_dimensions_.height;
   if(abs(height_diff) < 0.02) {
-    if(block.pose_.position.x >= freezone.point.x &&
-       block.pose_.position.x <= freezone.area.length + freezone.point.x) {
-      if(block.pose_.position.y >= freezone.point.y &&
-         block.pose_.position.y <= freezone.area.width + freezone.point.y)
+    if(block.pose_.position.x >= table_freezone_.point.x &&
+       block.pose_.position.x <= table_freezone_.area.length + table_freezone_.point.x) {
+      if(block.pose_.position.y >= table_freezone_.point.y &&
+         block.pose_.position.y <= table_freezone_.area.width + table_freezone_.point.y) {
+        return true;
+      }
     }
   }
+  return false;
 }
 
 bool ARWorldBuilder::pointInRectangle(Rectangle r, Point p)
@@ -256,15 +259,15 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
     tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
     
     // Assuming that yaw is the correct rotation angle. Needs to be fixed...
-    double init_angle = arctan(it->second.dimensions.y / it->second.dimensions.x);
+    double init_angle = atan(it->second.dimensions_.y / it->second.dimensions_.x);
     Point tl = {it->second.pose_.position.x + cos(init_angle+yaw),
-                it->second.pose_.position.y + sin(init_angle+yaw)}
+                it->second.pose_.position.y + sin(init_angle+yaw)};
     Point tr = {it->second.pose_.position.x - cos(init_angle+yaw),
-                it->second.pose_.position.y + sin(init_angle+yaw)}
+                it->second.pose_.position.y + sin(init_angle+yaw)};
     Point bl = {it->second.pose_.position.x - cos(init_angle+yaw),
-                it->second.pose_.position.y - sin(init_angle+yaw)}
+                it->second.pose_.position.y - sin(init_angle+yaw)};
     Point br = {it->second.pose_.position.x + cos(init_angle+yaw),
-                it->second.pose_.position.y - sin(init_angle+yaw)}
+                it->second.pose_.position.y - sin(init_angle+yaw)};
     
     vector<Point> points;
     points.push_back(tl);
@@ -272,23 +275,26 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
     points.push_back(bl);
     points.push_back(br);
     
-    // Define a Rectangle that is aligned with the y axis that inscribes the shape
+    // Define a Rectangle that is aligned with the y axis that inscribes the shape (bounding box)
     // Simplifies calculations
-    Rectangle inscribed;
     Point top_left_point;
     Area r_area;
     r_area.length = (tr.x - tl.x)/2;
     r_area.width = (tr.y - bl.y)/2;
     top_left_point.x = it->second.pose_.position.x - r_area.length;
     top_left_point.y = it->second.pose_.position.y + r_area.width;
-    inscribed.point = { top_left_point, r_area };
+    Rectangle inscribed = { top_left_point, r_area };
 
     // Generate rectangle's poins
     vector<Point> area_points;
-    area_points.push_back( { r.point + r.area.length/2, r.point - r.area.width/2 } );
-    area_points.push_back( { r.point + r.area.length/2, r.point - r.area.width/2 } );
-    area_points.push_back( { r.point + r.area.length/2, r.point - r.area.width/2 } );
-    area_points.push_back( { r.point + r.area.length/2, r.point - r.area.width/2 } );
+    Point bb_tl = { r.point.x + r.area.length/2, r.point.y - r.area.width/2 };
+    Point bb_tr = { r.point.x + r.area.length/2, r.point.y + r.area.width/2 };
+    Point bb_bl = { r.point.x - r.area.length/2, r.point.y - r.area.width/2 };
+    Point bb_br = { r.point.x - r.area.length/2, r.point.y + r.area.width/2 };
+    area_points.push_back( bb_tl );
+    area_points.push_back( bb_tr );
+    area_points.push_back( bb_bl );
+    area_points.push_back( bb_br );
     
     if(pointInRectangle(r, points)) return false;
     if(pointInRectangle(inscribed, area_points)) return false;
@@ -298,12 +304,12 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
   return true;
 }
 
-vector<moveit_msgs::PlaceLocation> findFreeLocations()
+vector<moveit_msgs::PlaceLocation> ARWorldBuilder::findFreeLocations()
 {
     // Create a partiion of the freezone
     double tolerance = 0.03; // Define a tolerance for the two gripper ends. 3cm for both.
-    int num_partitions_x = table_freezone_.area.x/(block_size_+tolerance);
-    int num_partitions_y = table_freezone_.area.y/(block_size_+tolerance);
+    int num_partitions_x = table_freezone_.area.length/(block_size_+tolerance);
+    int num_partitions_y = table_freezone_.area.width/(block_size_+tolerance);
     int num_partitions = num_partitions_x * num_partitions_y;
     
     vector<moveit_msgs::PlaceLocation> areas;
@@ -326,15 +332,21 @@ vector<moveit_msgs::PlaceLocation> findFreeLocations()
           
           // Generate a placeable area
           moveit_msgs::PlaceLocation ploc;
+          geometry_msgs::Pose block_pose;
+          block_pose.position.x = place.point.x + (place.area.length/2.0);
+          block_pose.position.y = place.point.y + (place.area.width/2.0);
+          // FIX
+          block_pose.position.z = table_dimensions_.height;
+          block_pose.orientation.w = 1.0;
           
           geometry_msgs::PoseStamped goal_stamped;
           goal_stamped.header.frame_id = gd.base_link_;
           goal_stamped.header.stamp = ros::Time::now();
-          goal_stamped.pose = blocks[block_count].pose_stamped.pose;
+          goal_stamped.pose = block_pose;
           
           moveit_msgs::GripperTranslation pre_place_approach;
           pre_place_approach.direction.header.stamp = ros::Time::now();
-          pre_place_approach.desired_distance = gd.approach_retreat_desired_dist_;l
+          pre_place_approach.desired_distance = gd.approach_retreat_desired_dist_;
           pre_place_approach.min_distance = gd.approach_retreat_min_dist_;
           pre_place_approach.direction.header.frame_id = gd.base_link_;
           pre_place_approach.direction.vector.x = 0;
@@ -362,7 +374,7 @@ vector<moveit_msgs::PlaceLocation> findFreeLocations()
   return areas;
 }
 
-bool pickBlock(ARBlock &block, bool left_side = true)
+bool ARWorldBuilder::pickBlock(ARBlock &block, bool left_side = true)
 {
     vector<moveit_msgs::Grasp> grasps;
     vector<trajectory_msgs::JointTrajectoryPoint> ik;
@@ -372,15 +384,15 @@ bool pickBlock(ARBlock &block, bool left_side = true)
     std::string planning_group = (!left_side) ? ("left_arm") : ("right_arm");
     move_group_interface::MoveGroup &mg = (!left_side) ? (left_arm_) : (right_arm_);
     
-    ROS_INFO("Generating grasps for block %d.", sit->second.id_);
-    grasper->generateBlockGrasps( sit->second.pose_, gdata, grasps );
+    ROS_INFO("Generating grasps for block %d.", block.id_);
+    grasper->generateBlockGrasps( block.pose_, gdata, grasps );
     
-    ROS_INFO("Filtering grasps for block %d.", sit->second.id_);
+    ROS_INFO("Filtering grasps for block %d.", block.id_);
     grasp_filter_->filterGrasps( grasps, ik, true, gdata.ee_parent_link_, planning_group );
     
-    ROS_INFO("Picking up block %d.", sit->second.id_);
-    if(!pick(mg, grasps)) {
-      ROS_ERROR("Problem encountered picking up block %d.", sit->second.id_);
+    ROS_INFO("Picking up block %d.", block.id_);
+    if(!mg.pick(block.getStringId(), grasps)) {
+      ROS_ERROR("Problem encountered picking up block %d.", block.id_);
       return false;
     }
     return true;
@@ -414,7 +426,7 @@ bool ARWorldBuilder::clearStage()
         
         if(pickBlock(sit->second)) {
           vector<moveit_msgs::PlaceLocation> placeable_area;
-          placeable_area.push_back(free_locations[moved_blocks];
+          placeable_area.push_back(free_locations[moved_blocks]);
           mg.setPlannerId("RRTConnectionkConfigDefault");
            
           if(!mg.place(sit->second.getStringId(), placeable_area)) {
@@ -449,22 +461,23 @@ void ARWorldBuilder::actionServerCallback(const ar_blocks::BuildStructureGoalCon
   // Make sure that the caller has not preempted the action at any point
   // Publish feedback after a block has been placed or misplaced
   int layer_count = 0;
-  vector<Layer> &layers = goal->goal_structure.layers;
-  while(!ar_blocks_action_server_.isPreempted() && 
+  const vector<ar_blocks::Layer> &layers = goal->goal_structure.layers;
+  while(!ar_blocks_action_server_.isPreemptRequested() && 
         layer_count < layers.size()) 
   {
-    ar_blocks_feedback_.updated_structure.push_back( vector<Block>() );
-    
+    ar_blocks_feedback_.updated_structure.layers.push_back( ar_blocks::Layer() );
+     
     // Create sorted set of blocks in the layer based on position away from Baxter
-    sort(layers[layer_count].blocks.begin(), layers[layer_count].blocks.end(), &ARBlock::blockCompare);
+    // FIX
+    // sort(layers[layer_count].blocks.begin(), layers[layer_count].blocks.end(), blockCompare);
     
     int block_count = 0;
-    vector<Block> &blocks = layers[layer_count].blocks;
-    while(!ar_blocks_action_server_.isPreempted() &&
-          block_count < blocks.size())
+    const ar_blocks::Layer &top_layer = layers[layer_count];
+		// ar_blocks_feedback_.updated_structure.layers.push_back( top_layer );
+    while(!ar_blocks_action_server_.isPreemptRequested() &&
+          block_count < top_layer.blocks.size())
     {
-			ar_blocks_feedback_.updated_structure[layer_count].push_back( blocks[block_count] );
-      bool left_side = (sit->second.pose_.position.x > 0) ? (true) : (false);
+      bool left_side = (top_layer.blocks[block_count].pose_stamped.pose.position.x > 0) ? (true) : (false);
       
       // Find and pick a block from the freezone
       int block_id = pickFreeBlock(left_side);
@@ -484,11 +497,11 @@ void ARWorldBuilder::actionServerCallback(const ar_blocks::BuildStructureGoalCon
       geometry_msgs::PoseStamped goal_stamped;
       goal_stamped.header.frame_id = gd.base_link_;
       goal_stamped.header.stamp = ros::Time::now();
-      goal_stamped.pose = blocks[block_count].pose_stamped.pose;
+      goal_stamped.pose = top_layer.blocks[block_count].pose_stamped.pose;
       
       moveit_msgs::GripperTranslation pre_place_approach;
       pre_place_approach.direction.header.stamp = ros::Time::now();
-      pre_place_approach.desired_distance = gd.approach_retreat_desired_dist_;l
+      pre_place_approach.desired_distance = gd.approach_retreat_desired_dist_;
       pre_place_approach.min_distance = gd.approach_retreat_min_dist_;
       pre_place_approach.direction.header.frame_id = gd.base_link_;
       pre_place_approach.direction.vector.x = 0;
@@ -511,14 +524,15 @@ void ARWorldBuilder::actionServerCallback(const ar_blocks::BuildStructureGoalCon
       mg.setPlannerId("RRTConnectionkConfigDefault");
       
       stringstream ss;
-      ss << blocks[block_count].id;
+      ss << top_layer.blocks[block_count].id;
       if(!mg.place(ss.str(), placeable_area)) {
         ROS_ERROR("Failed to place block. Reset the stage and try again.");
         return;
       }
       
-      ar_blocks_[block_id].pose_ = blocks[block_count].pose_stamped.pose;
-      ar_blocks_[block_id].time_stamp_ = block[block_count].pose_stamped.stamp;
+      ar_blocks_[block_id].pose_ = top_layer.blocks[block_count].pose_stamped.pose;
+      ar_blocks_[block_id].time_stamp_ = top_layer.blocks[block_count].pose_stamped.header.stamp;
+		  ar_blocks_feedback_.updated_structure.layers[layer_count].blocks.push_back( top_layer.blocks[block_count] );
       ar_blocks_action_server_.publishFeedback( ar_blocks_feedback_ );
       block_count++;
     }
@@ -529,7 +543,7 @@ void ARWorldBuilder::actionServerCallback(const ar_blocks::BuildStructureGoalCon
   ar_blocks_result_.final_structure = ar_blocks_feedback_.updated_structure;
   ar_blocks_result_.final_structure.header.stamp = ros::Time::now();
   ar_blocks_result_.final_structure.header.frame_id = std::string("/base"); 
-  ar_blocks_action_server_.setSucceeded( ar_blocks_results_ );
+  ar_blocks_action_server_.setSucceeded( ar_blocks_result_ );
 }
 
 void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::ConstPtr& markers_msg)

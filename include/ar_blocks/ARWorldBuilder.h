@@ -24,7 +24,7 @@
 #include <ar_track_alvar/Kalman.h>
 #include <ar_track_alvar/Platform.h>
 #include <ar_track_alvar/AlvarException.h>
-#include <tf/Transform.h>
+// #include <tf/Transform.h>
 #include <tf/transform_datatypes.h>
 #include <baxter_core_msgs/HeadPanCommand.h>
 #include <boost/thread.hpp>
@@ -99,15 +99,15 @@ public:
   // Block Handling
   bool inFreeZone(ARBlock);
   bool clearStage();
-  bool pickBlock(ARBlock &block);
-  bool pickFreeBlock();
+  bool pickBlock(ARBlock &block, bool left_side);
+  bool pickFreeBlock(bool left_side);
   bool isAreaClear(Rectangle r);
   bool pointInRectangle(Rectangle r, Point p);
-  bool pointInRectangle(Rectangle r, vector<Point> pv);
-  vector<moveit_msgs::PlaceLocation> findFreeLocations();
+  bool pointInRectangle(Rectangle r, std::vector<Point> pv);
+  std::vector<moveit_msgs::PlaceLocation> findFreeLocations();
 
   // Action Handling
-  actionlib::SimpleActionServer ar_blocks_action_server_;
+  actionlib::SimpleActionServer<ar_blocks::BuildStructureAction> ar_blocks_action_server_;
   ar_blocks::BuildStructureGoal ar_blocks_goal_;
   ar_blocks::BuildStructureFeedback ar_blocks_feedback_;
   ar_blocks::BuildStructureResult ar_blocks_result_;

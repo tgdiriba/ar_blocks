@@ -59,7 +59,7 @@ void ARBlock::printInfo()
 	ROS_INFO_STREAM("\t\tw: " << pose_.orientation.w);
 }
 
-ar_blocks::Block toBlockMsg()
+ar_blocks::Block ARBlock::toBlockMsg()
 {
   ar_blocks::Block t;
   t.length = dimensions_.x;
@@ -69,6 +69,7 @@ ar_blocks::Block toBlockMsg()
   t.pose_stamped.header.stamp = time_stamp_;
   t.pose_stamped.header.frame_id = std::string("/base");
   t.pose_stamped.pose = pose_;
+  return t;
 }
 
 alvar::Kalman toKalman()
@@ -100,7 +101,7 @@ moveit_msgs::CollisionObject ARBlock::toCollisionObject(std::string planning_fra
 		return block;
 }
 
-static bool ARBlock::blockCompare(const ar_blocks::Block &a, const ar_blocks::Block &b)
+bool blockCompare(const ar_blocks::Block &a, const ar_blocks::Block &b)
 {
    return a.pose_stamped.pose.position.y > b.pose_stamped.pose.position.y;
 }

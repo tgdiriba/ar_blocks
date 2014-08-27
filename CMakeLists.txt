@@ -53,6 +53,7 @@ find_package(catkin
   actionlib_msgs
 )
 find_package(Boost REQUIRED)
+find_package(Qt4 REQUIRED)
 
 catkin_python_setup()
 
@@ -122,12 +123,29 @@ catkin_package(
 	image_transport
 )
 
+set(ar_blocks_interface_HEADERS
+  include/ar_blocks/ARBlocksInterface.h
+  include/ar_blocks/Square.h
+  include/ar_blocks/Scene.h
+)
+
+QT4_WRAP_CPP(ar_blocks_interface_HEADERS_MOC ${ar_blocks_interface_HEADERS})
+
+include(${QT_USE_FILE})
+
 include_directories(
 	include 
 	${catkin_INCLUDE_DIRS} 
 	${OpenCV_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIRS}
+  ${QT_INCLUDES}
 )
+
+link_directories(
+  ${QT_LINK_DIRS}
+)
+
+add_definitions(${QT_DEFINITIONS})
 
 add_library(ar_blocks
 	src/ARBlock.cpp
@@ -137,6 +155,7 @@ add_library(ar_blocks
 target_link_libraries(ar_blocks 
 	${catkin_LIBRARIES}
 	${Boost_LIBRARIES}
+  ${QT_LIBRARIES}
 )
 add_dependencies(ar_blocks ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
 
@@ -155,6 +174,19 @@ target_link_libraries(ar_blocks_environment
 	ar_blocks
 )
 add_dependencies(ar_blocks_environment ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
+
+add_executable(ar_blocks_interface nodes/ar_blocks_interface.cpp 
+  src/ARBlocksInterface.cpp
+  src/Square.cpp
+  src/Scene.cpp
+  ${ar_blocks_interface_HEADERS_MOC}
+)
+target_link_libraries(ar_blocks_interface
+	${catkin_LIBRARIES}
+	${Boost_LIBRARIES}
+  ${QT_LIBRARIES}
+)
+add_dependencies(ar_blocks_interface ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
 
 add_executable(gripper_state_translator nodes/gripper_state_translator.cpp)
 target_link_libraries(gripper_state_translator

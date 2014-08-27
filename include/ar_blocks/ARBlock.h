@@ -49,12 +49,13 @@ public:
 		Dimensions dimensions_;
 	};
   
-  static bool blockCompare(const ar_blocks::Block &a, const ar_blocks::Block &b);
 
 	// Debugging
 	void printInfo();
 
 };
+  
+bool blockCompare(const ar_blocks::Block &a, const ar_blocks::Block &b);
 
 }
 
