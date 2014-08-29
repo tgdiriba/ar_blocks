@@ -169,11 +169,12 @@ void ARBlocksInterface::drawLayer(ar_blocks::Layer layer, QPen pen, QBrush brush
 
 void ARBlocksInterface::drawStaticLayer(int layer_number)
 {
-  if(layer_number < layer_count_ && layer_number_ > 0) {
-    std::vector<ar_blocks::Block> &blocks = goal_structure_.layers[layer_number_].blocks;
-    for(int i = 0; i < goal_structure_.layers[layer_number_].blocks.size(); i++) {
+  if(layer_number < layer_count_ && layer_number > 0) {
+    std::vector<ar_blocks::Block> &blocks = goal_structure_.goal_structure.layers[layer_number].blocks;
+    for(int i = 0; i < goal_structure_.goal_structure.layers[layer_number].blocks.size(); i++) {
       block_scene_->addRect(-blocks[i].pose_stamped.pose.position.y, blocks[i].pose_stamped.pose.position.x, ratio * blocks[i].length, ratio * blocks[i].width, QPen(Qt::gray));
     }
+  }
 }
 
 void ARBlocksInterface::redrawScene()
@@ -274,7 +275,7 @@ void ARBlocksInterface::arBlocksFeedbackCallback(const ar_blocks::BuildStructure
   for(int i = 0; i < feedback->updated_structure.layers.size(); i++) valid_blocks += feedback->updated_structure.layers[i].blocks.size();
   for(int i = 0; i < goal_structure_.goal_structure.layers.size(); i++) total_blocks += goal_structure_.goal_structure.layers[i].blocks.size();
   
-  int percent = (int(total_blocks) != 0.0 && total_blocks >= 0.0) ? int(valid_blocks/total_blocks) : 0;
+  int percent = ((int)(total_blocks) != 0 && total_blocks >= 0.0) ? (int)(valid_blocks/total_blocks) : 0;
   
   build_progress_->setValue(percent);
 }
