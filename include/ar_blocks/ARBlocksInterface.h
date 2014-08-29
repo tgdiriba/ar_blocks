@@ -4,11 +4,20 @@
 #include <QMainWindow>
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
+#include <map>
 #include <ar_blocks/Scene.h>
 #include <ar_blocks/Square.h>
 #include <ar_blocks/BuildStructureAction.h>
 
 namespace nxr {
+
+static int scene_width = 630;
+static int scene_height = 500;
+static double table_dim_x = 121.602; 
+static double table_dim_y = 60.8012;
+static double x_ratio = scene_width/table_dim_x;
+static double y_ratio = scene_height/table_dim_y;
+static double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio;
 
 class ARBlocksInterface : public QMainWindow
 {
@@ -17,6 +26,8 @@ class ARBlocksInterface : public QMainWindow
   typedef actionlib::SimpleActionClient<ar_blocks::BuildStructureAction> Client;
 public:
   ARBlocksInterface();
+  
+  // Try and fit around 20 blocks in the scene
 private:
   // Qt
   QVBoxLayout *center_layout_;
@@ -45,8 +56,8 @@ private:
   QLabel *block_count_field_;
   QLabel *stability_field_;
   
-  QPushButton *next_layer_btn_;
   QPushButton *prev_layer_btn_;
+  QPushButton *next_layer_btn_;
   QPushButton *remove_layer_btn_;
   QPushButton *add_layer_btn_;
   
@@ -61,7 +72,34 @@ private:
   Client ar_blocks_client_;
   
 public slots:
-  void showMessage(QString);
+  void previousLayerBtnHandler();
+  void nextLayerBtnHandler();
+  void removeLayerBtnHandler();
+  void addLayerBtnHandler();
+  void abortBtnHandler();
+  void buildBtnHandler();
+private:
+  void arBlocksDoneCallback(const actionlib::SimpleClientGoalState &state,
+                            const ar_blocks::BuildStructureResultConstPtr &result);
+  void arBlocksActiveCallback();
+  void arBlocksFeedbackCallback(const ar_blocks::BuildStructureFeedbackConstPtr &feedback);
+
+  void drawStaticLayer(int layer_number);
+  void drawDynamicLayer(int layer_number);
+ 
+  void drawTable(); 
+  void clearScene();
+  void redrawScene();
+  void drawScene();
+  void drawLayer(ar_blocks::Layer layer, QPen pen = QPen(Qt::black), QBrush brush = Qt::NoBrush);
+  
+  int current_layer_number_;
+  int layer_count_;
+  ar_blocks::BuildStructureGoal goal_structure_;
+  
+  std::map<int, QGraphicsItem*> block_ids_;
+  std::vector< std::vector<int> > block_store_;
+  
 };
 
 } // namespace nxr

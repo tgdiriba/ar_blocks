@@ -5,6 +5,8 @@ namespace nxr {
 
 ARBlocksInterface::ARBlocksInterface() :
   QMainWindow(),
+  current_layer_number_(1),
+  layer_count_(1),
   ar_blocks_client_("ar_blocks", true)
 {
   center_layout_ = new QVBoxLayout;
@@ -13,7 +15,7 @@ ARBlocksInterface::ARBlocksInterface() :
   viz2d_tools_ = new QHBoxLayout;
   
   block_size_layout_ = new QHBoxLayout;
-  block_size_label_ = new QLabel("Block Size: \t\t");
+  block_size_label_ = new QLabel("Block Size: \t");
   block_size_input_ = new QLineEdit;
   
   left_panel_title_ = new QLabel("Layer Creator");
@@ -28,11 +30,12 @@ ARBlocksInterface::ARBlocksInterface() :
   current_layer_->setAlignment(Qt::AlignRight);
   
   block_scene_ = new Scene;
+  //block_scene_->clear();
   QGraphicsView *qview = new QGraphicsView(block_scene_);
   qview->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   qview->setFrameStyle(0);
-  qview->setMinimumSize(620, 500);
-  qview->setMaximumSize(620,500);
+  qview->setMinimumSize(scene_width, scene_height);
+  qview->setMaximumSize(scene_width, scene_height);
   
   setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
 
@@ -99,21 +102,181 @@ ARBlocksInterface::ARBlocksInterface() :
 
   QWidget *main_widget = new QWidget;
   main_widget->setLayout(center_layout_);
-  main_widget->setMinimumSize(600, 750);
+  main_widget->setMinimumSize(scene_width, scene_height+250);
+  main_widget->setMaximumSize(scene_width, scene_height+250);
   setCentralWidget(main_widget);
   
   // Setup the signals and slots
-  connect(block_scene_, SIGNAL(message(QString)), this, SLOT(showMessage(QString)));
+  // QPUSHBUTTON
+  connect(prev_layer_btn_, SIGNAL(clicked()), this, SLOT(previousLayerBtnHandler()));
+  connect(next_layer_btn_, SIGNAL(clicked()), this, SLOT(nextLayerBtnHandler()));
+  connect(remove_layer_btn_, SIGNAL(clicked()), block_scene_, SLOT(clear()));
+  connect(add_layer_btn_, SIGNAL(clicked()), block_scene_, SLOT(addLayerBtnHandler()));
+  connect(abort_btn_, SIGNAL(clicked()), this, SIGNAL(abortBtnHandler()));
+  connect(build_btn_, SIGNAL(clicked()), this, SIGNAL(buildBtnHandler()));
   
   // Button signals and slots
-
+  
   // ar_blocks_client_.waitForServer();
+
+  statusBar()->showMessage("");
+
+  // Testing
+  ar_blocks::Layer l;
+  ar_blocks::Block b;
+  b.length = 5.0;
+  b.width = 5.0;
+  b.height = 5.0;
+  b.pose_stamped.pose.position.x = table_dim_x / 2.0;
+  b.pose_stamped.pose.position.y = table_dim_y / 2.0;
+  l.blocks.push_back(b);
+  // drawLayer(l); 
+
+  drawTable();
   
 }
 
-void ARBlocksInterface::showMessage(QString msg)
+void ARBlocksInterface::drawTable()
 {
-  statusBar()->showMessage(msg);
+  double x_ratio = (scene_width - 20.0)/ table_dim_x;
+  double y_ratio = (scene_height - 20.0)/ table_dim_y;
+  double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio; 
+  
+  block_scene_->addRect(0.0, 0.0, ratio*table_dim_x, ratio*table_dim_y);
+}
+
+void ARBlocksInterface::clearScene()
+{
+  block_scene_->clear();
+}
+
+void ARBlocksInterface::drawScene()
+{
+  
+}
+
+void ARBlocksInterface::drawLayer(ar_blocks::Layer layer, QPen pen, QBrush brush)
+{
+  for(int i = 0; i < layer.blocks.size(); i++) {
+    // Use the block's 2D projection onto the table
+    double num_pixels_y = ratio * layer.blocks[i].width;
+    double num_pixels_x = ratio * layer.blocks[i].length;
+    // ROS conventions flip the x and y dimensions due to the z axis being out of the plane
+    
+    block_scene_->addRect(-layer.blocks[i].pose_stamped.pose.position.y, layer.blocks[i].pose_stamped.pose.position.x, num_pixels_x, num_pixels_y, pen, brush);
+  }
+}
+
+void ARBlocksInterface::drawStaticLayer(int layer_number)
+{
+  if(layer_number < layer_count_ && layer_number_ > 0) {
+    std::vector<ar_blocks::Block> &blocks = goal_structure_.layers[layer_number_].blocks;
+    for(int i = 0; i < goal_structure_.layers[layer_number_].blocks.size(); i++) {
+      block_scene_->addRect(-blocks[i].pose_stamped.pose.position.y, blocks[i].pose_stamped.pose.position.x, ratio * blocks[i].length, ratio * blocks[i].width, QPen(Qt::gray));
+    }
+}
+
+void ARBlocksInterface::redrawScene()
+{
+  drawTable();
+  if(current_layer_number_ > 1) {
+    
+  }
+}
+
+void ARBlocksInterface::previousLayerBtnHandler()
+{
+  if(current_layer_number_ == 1) {
+    statusBar()->showMessage("Reached the bottom layer.");
+  }
+  else {
+    current_layer_number_--;
+    redrawScene();
+    statusBar()->showMessage("Drawing previous layer.");
+  }
+}
+
+void ARBlocksInterface::nextLayerBtnHandler()
+{
+  if(current_layer_number_ == layer_count_) {
+    statusBar()->showMessage("Reached the top layer.");
+  }
+  else {
+    current_layer_number_++;
+    redrawScene();
+    statusBar()->showMessage("Drawing next layer.");
+  }
+}
+
+void ARBlocksInterface::removeLayerBtnHandler()
+{
+  if(current_layer_number_ != layer_count_) {
+    statusBar()->showMessage("Can only remove the top layer.");
+  }
+  else {
+    block_store_.pop_back();
+    layer_count_--;
+    current_layer_number_--;
+    redrawScene(); 
+    statusBar()->showMessage("Removing the top layer.");
+  }
+}
+
+void ARBlocksInterface::addLayerBtnHandler()
+{
+  if(current_layer_number_ != layer_count_) {
+    statusBar()->showMessage("Can only add to the top layer.");
+  }
+  else {
+    block_store_.push_back( std::vector<int>() );
+    layer_count_++;
+    current_layer_number_++;
+    redrawScene();
+    statusBar()->showMessage("Adding a top layer.");
+  }
+}
+
+void ARBlocksInterface::abortBtnHandler()
+{
+  ar_blocks_client_.cancelGoal();
+  statusBar()->showMessage("Build was cancelled.");
+}
+
+void ARBlocksInterface::buildBtnHandler()
+{
+  ar_blocks_client_.sendGoal( goal_structure_,
+                              boost::bind(&ARBlocksInterface::arBlocksDoneCallback, this, _1, _2),
+                              boost::bind(&ARBlocksInterface::arBlocksActiveCallback, this),
+                              boost::bind(&ARBlocksInterface::arBlocksFeedbackCallback, this, _1) );
+  statusBar()->showMessage("Build was sent.");
+}
+
+void ARBlocksInterface::arBlocksDoneCallback(const actionlib::SimpleClientGoalState &state,
+                          const ar_blocks::BuildStructureResultConstPtr &result)
+{
+  statusBar()->showMessage("Build complete");
+  build_progress_->setValue(100);
+}
+
+void ARBlocksInterface::arBlocksActiveCallback()
+{
+  statusBar()->showMessage("Build action reached. Now active.");
+  build_progress_->setValue(0);
+}
+
+void ARBlocksInterface::arBlocksFeedbackCallback(const ar_blocks::BuildStructureFeedbackConstPtr &feedback)
+{
+  statusBar()->showMessage("Feedback message received...");
+  
+  // Count the number of blocks that were successfully placed and take a percentage of the total
+  double valid_blocks = 0.0;
+  double total_blocks = 0.0;
+  for(int i = 0; i < feedback->updated_structure.layers.size(); i++) valid_blocks += feedback->updated_structure.layers[i].blocks.size();
+  for(int i = 0; i < goal_structure_.goal_structure.layers.size(); i++) total_blocks += goal_structure_.goal_structure.layers[i].blocks.size();
+  
+  int percent = (int(total_blocks) != 0.0 && total_blocks >= 0.0) ? int(valid_blocks/total_blocks) : 0;
+  
+  build_progress_->setValue(percent);
 }
 
 } // namespace nxr
