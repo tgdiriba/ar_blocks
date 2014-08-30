@@ -125,7 +125,7 @@ catkin_package(
 
 set(ar_blocks_interface_HEADERS
   include/ar_blocks/ARBlocksInterface.h
-  include/ar_blocks/Square.h
+  include/ar_blocks/Rectangle.h
   include/ar_blocks/Scene.h
 )
 
@@ -177,7 +177,7 @@ add_dependencies(ar_blocks_environment ${catkin_EXPORTED_TARGETS} moveit_msgs_ge
 
 add_executable(ar_blocks_interface nodes/ar_blocks_interface.cpp 
   src/ARBlocksInterface.cpp
-  src/Square.cpp
+  src/Rectangle.cpp
   src/Scene.cpp
   ${ar_blocks_interface_HEADERS_MOC}
 )

@@ -21,16 +21,13 @@ ARBlocksInterface::ARBlocksInterface() :
   left_panel_title_ = new QLabel("Layer Creator");
   current_layer_cb_ = new QComboBox;
   current_layer_cb_->addItem("1");
-  current_layer_cb_->addItem("2");
-  current_layer_cb_->addItem("3");
-  //current_layer_cb_->setAlignment(Qt::AlignRight);
   
   // Outdated
   current_layer_ = new QLabel("1");
   current_layer_->setAlignment(Qt::AlignRight);
   
-  block_scene_ = new Scene;
-  //block_scene_->clear();
+  block_scene_ = new Scene(this);
+  // block_scene_->setSceneRect(-scene_width/2, -scene_height/2, scene_width/2, scene_height/2);
   QGraphicsView *qview = new QGraphicsView(block_scene_);
   qview->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   qview->setFrameStyle(0);
@@ -82,7 +79,6 @@ ARBlocksInterface::ARBlocksInterface() :
   
   viz2d_panel_->addWidget(left_panel_title_);
   viz2d_panel_->addWidget(current_layer_cb_);
-  //viz2d_panel_->addWidget(current_layer_);
   
   // LEFT_LAYOUT DISPLACEMENT
   center_layout_->addLayout(viz2d_panel_);
@@ -110,13 +106,13 @@ ARBlocksInterface::ARBlocksInterface() :
   // QPUSHBUTTON
   connect(prev_layer_btn_, SIGNAL(clicked()), this, SLOT(previousLayerBtnHandler()));
   connect(next_layer_btn_, SIGNAL(clicked()), this, SLOT(nextLayerBtnHandler()));
-  connect(remove_layer_btn_, SIGNAL(clicked()), block_scene_, SLOT(clear()));
-  connect(add_layer_btn_, SIGNAL(clicked()), block_scene_, SLOT(addLayerBtnHandler()));
-  connect(abort_btn_, SIGNAL(clicked()), this, SIGNAL(abortBtnHandler()));
-  connect(build_btn_, SIGNAL(clicked()), this, SIGNAL(buildBtnHandler()));
+  connect(remove_layer_btn_, SIGNAL(clicked()), this, SLOT(removeLayerBtnHandler()));
+  connect(add_layer_btn_, SIGNAL(clicked()), this, SLOT(addLayerBtnHandler()));
+  connect(abort_btn_, SIGNAL(clicked()), this, SLOT(abortBtnHandler()));
+  connect(build_btn_, SIGNAL(clicked()), this, SLOT(buildBtnHandler()));
   
-  // Button signals and slots
-  
+  connect(current_layer_cb_, SIGNAL(currentIndexChanged(int)), this, SLOT(indexChangeHandler())); 
+ 
   // ar_blocks_client_.waitForServer();
 
   statusBar()->showMessage("");
@@ -131,9 +127,22 @@ ARBlocksInterface::ARBlocksInterface() :
   b.pose_stamped.pose.position.y = table_dim_y / 2.0;
   l.blocks.push_back(b);
   // drawLayer(l); 
+  
+  setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
+  layout()->setSizeConstraint(QLayout::SetFixedSize);
+
+  
 
   drawTable();
+
+  block_scene_->addRect(0.0, 0.0, 5, 5);
   
+}
+
+void ARBlocksInterface::indexChangeHandler()
+{
+  current_layer_number_ = current_layer_cb_->currentIndex()+1;
+  redrawScene(); 
 }
 
 void ARBlocksInterface::drawTable()
@@ -142,12 +151,7 @@ void ARBlocksInterface::drawTable()
   double y_ratio = (scene_height - 20.0)/ table_dim_y;
   double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio; 
   
-  block_scene_->addRect(0.0, 0.0, ratio*table_dim_x, ratio*table_dim_y);
-}
-
-void ARBlocksInterface::clearScene()
-{
-  block_scene_->clear();
+  block_scene_->addRect(0.0, 0.0, ratio*table_dim_x, ratio*table_dim_y, QPen(Qt::red));
 }
 
 void ARBlocksInterface::drawScene()
@@ -169,19 +173,25 @@ void ARBlocksInterface::drawLayer(ar_blocks::Layer layer, QPen pen, QBrush brush
 
 void ARBlocksInterface::drawStaticLayer(int layer_number)
 {
-  if(layer_number < layer_count_ && layer_number > 0) {
+  /*if(layer_number < layer_count_ && layer_number > 0) {
     std::vector<ar_blocks::Block> &blocks = goal_structure_.goal_structure.layers[layer_number].blocks;
     for(int i = 0; i < goal_structure_.goal_structure.layers[layer_number].blocks.size(); i++) {
       block_scene_->addRect(-blocks[i].pose_stamped.pose.position.y, blocks[i].pose_stamped.pose.position.x, ratio * blocks[i].length, ratio * blocks[i].width, QPen(Qt::gray));
     }
-  }
+  }*/
+}
+
+void ARBlocksInterface::drawDynamicLayer(int layer_number)
+{
+
 }
 
 void ARBlocksInterface::redrawScene()
 {
+  block_scene_->clear();  
   drawTable();
   if(current_layer_number_ > 1) {
-    
+    drawStaticLayer(current_layer_number_-1);
   }
 }
 
@@ -192,6 +202,7 @@ void ARBlocksInterface::previousLayerBtnHandler()
   }
   else {
     current_layer_number_--;
+    current_layer_cb_->setCurrentIndex(current_layer_number_-1);
     redrawScene();
     statusBar()->showMessage("Drawing previous layer.");
   }
@@ -204,6 +215,7 @@ void ARBlocksInterface::nextLayerBtnHandler()
   }
   else {
     current_layer_number_++;
+    current_layer_cb_->setCurrentIndex(current_layer_number_-1);
     redrawScene();
     statusBar()->showMessage("Drawing next layer.");
   }
@@ -214,10 +226,18 @@ void ARBlocksInterface::removeLayerBtnHandler()
   if(current_layer_number_ != layer_count_) {
     statusBar()->showMessage("Can only remove the top layer.");
   }
+  else if(current_layer_number_ == 1) {
+    statusBar()->showMessage("Cleared initial layer.");
+    block_scene_->clear();
+    redrawScene();
+  }
   else {
-    block_store_.pop_back();
+    block_scene_->clear();
+    block_scene_->block_store_.pop_back();
     layer_count_--;
     current_layer_number_--;
+    current_layer_cb_->setCurrentIndex(layer_count_-1);
+    current_layer_cb_->removeItem(layer_count_);
     redrawScene(); 
     statusBar()->showMessage("Removing the top layer.");
   }
@@ -229,11 +249,19 @@ void ARBlocksInterface::addLayerBtnHandler()
     statusBar()->showMessage("Can only add to the top layer.");
   }
   else {
-    block_store_.push_back( std::vector<int>() );
+    block_scene_->block_store_.push_back( std::vector<int>() );
     layer_count_++;
     current_layer_number_++;
+    std::stringstream ss;
+    ss << layer_count_;
+    current_layer_cb_->addItem(ss.str().c_str());
+    current_layer_cb_->setCurrentIndex(current_layer_number_-1);
     redrawScene();
-    statusBar()->showMessage("Adding a top layer.");
+    
+    std::stringstream output;
+    output << "Adding a top layer: " << current_layer_number_ << " " << layer_count_;
+    
+    statusBar()->showMessage(output.str().c_str());
   }
 }
 

@@ -6,7 +6,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <map>
 #include <ar_blocks/Scene.h>
-#include <ar_blocks/Square.h>
+#include <ar_blocks/Rectangle.h>
 #include <ar_blocks/BuildStructureAction.h>
 
 namespace nxr {
@@ -25,6 +25,7 @@ class ARBlocksInterface : public QMainWindow
   
   typedef actionlib::SimpleActionClient<ar_blocks::BuildStructureAction> Client;
 public:
+  friend class Scene;
   ARBlocksInterface();
   
   // Try and fit around 20 blocks in the scene
@@ -78,6 +79,8 @@ public slots:
   void addLayerBtnHandler();
   void abortBtnHandler();
   void buildBtnHandler();
+  
+  void indexChangeHandler();
 private:
   void arBlocksDoneCallback(const actionlib::SimpleClientGoalState &state,
                             const ar_blocks::BuildStructureResultConstPtr &result);
@@ -88,7 +91,6 @@ private:
   void drawDynamicLayer(int layer_number);
  
   void drawTable(); 
-  void clearScene();
   void redrawScene();
   void drawScene();
   void drawLayer(ar_blocks::Layer layer, QPen pen = QPen(Qt::black), QBrush brush = Qt::NoBrush);
@@ -96,9 +98,6 @@ private:
   int current_layer_number_;
   int layer_count_;
   ar_blocks::BuildStructureGoal goal_structure_;
-  
-  std::map<int, QGraphicsItem*> block_ids_;
-  std::vector< std::vector<int> > block_store_;
   
 };
 
