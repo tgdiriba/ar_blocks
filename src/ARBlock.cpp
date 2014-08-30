@@ -2,7 +2,7 @@
 
 namespace nxr {
 
-static const float g_block_sizes[BLOCK_NUM] = { 0.063, 0.051, 0.045 };
+static const float g_block_sizes[BLOCK_NUM] = { 0.0635, 0.051, 0.045 };
 
 ARBlock::ARBlock(unsigned int b_type) : block_type_(b_type)
 {
@@ -46,8 +46,8 @@ std::string ARBlock::getStringId()
 void ARBlock::printInfo()
 {
 	ROS_INFO_STREAM("Block " << getStringId() << " Pose:");
-  ROS_INFO_STREAM("\tTime Stamp: ");
-  ROS_INFO_STREAM("\t\t: " << time_stamp_);
+	ROS_INFO_STREAM("\tTime Stamp: ");
+	ROS_INFO_STREAM("\t\t: " << time_stamp_);
 	ROS_INFO_STREAM("\tPosition: ");
 	ROS_INFO_STREAM("\t\tx: " << pose_.position.x);
 	ROS_INFO_STREAM("\t\ty: " << pose_.position.y);
@@ -57,6 +57,26 @@ void ARBlock::printInfo()
 	ROS_INFO_STREAM("\t\ty: " << pose_.orientation.y);
 	ROS_INFO_STREAM("\t\tz: " << pose_.orientation.z);
 	ROS_INFO_STREAM("\t\tw: " << pose_.orientation.w);
+}
+
+int ARBlock::topSide()
+{
+  // Calculate which side is most facing up.
+  tf::Quaternion q( pose_.orientation.x,
+                    pose_.orientation.y,
+                    pose_.orientation.z,
+                    pose_.orientation.w );
+  double roll, pitch, yaw;
+  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+  
+  // Figure out the ranges. Easier to use quaternion?
+  return 0;
+  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
+  if(roll <= -M_PI/4 && roll > -3*M_PI/4 && yaw <= M_PI/4 && yaw > -M_PI/4) return 1;
+  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
+  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
+  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
+  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
 }
 
 ar_blocks::Block ARBlock::toBlockMsg()

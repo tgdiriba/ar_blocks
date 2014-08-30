@@ -108,51 +108,79 @@ void ARWorldBuilder::scanEnvironment()
   
   vector<geometry_msgs::Pose> points;
   geometry_msgs::Pose p1;
-  p1.position.x = 1;
-  p1.position.y = 1;
-  p1.position.z = 1;
-  p1.orientation.x = 1;
-  p1.orientation.y = 1;
-  p1.orientation.z = 1;
-  p1.orientation.w = 1;
+  p1.position.x = 0.098;
+  p1.position.y = 0.7;
+  p1.position.z = 0.011;
+  p1.orientation.x = 1.0;
+  p1.orientation.y = 0.01;
+  p1.orientation.z = 0.025;
+  p1.orientation.w = -0.0133;
   points.push_back(p1);
 
   geometry_msgs::Pose p2;
-  p2.position.x = 1;
-  p2.position.y = 1;
-  p2.position.z = 1;
-  p2.orientation.x = 1;
-  p2.orientation.y = 1;
-  p2.orientation.z = 1;
-  p2.orientation.w = 1;
+  p2.position.x = 0.565;
+  p2.position.y = 0.5523;
+  p2.position.z = 0.410;
+  p2.orientation.x = 0.996;
+  p2.orientation.y = 0.055;
+  p2.orientation.z = 0.037;
+  p2.orientation.w = 0.0469;
   points.push_back(p2);
   
   geometry_msgs::Pose p3;
-  p3.position.x = 1;
-  p3.position.y = 1;
-  p3.position.z = 1;
-  p3.orientation.x = 1;
-  p3.orientation.y = 1;
-  p3.orientation.z = 1;
-  p3.orientation.w = 1;
+  p3.position.x = 0.6834;
+  p3.position.y = 0.2276;
+  p3.position.z = 0.627;
+  p3.orientation.x = 1.0;
+  p3.orientation.y = -0.0999;
+  p3.orientation.z = 0.0512;
+  p3.orientation.w = 0.0117;
   points.push_back(p3);
   
+  geometry_msgs::Pose p4;
+  p3.position.x = 0.6730;
+  p3.position.y = -0.1514;
+  p3.position.z = 0.44046;
+  p3.orientation.x = 0.9361;
+  p3.orientation.y = -0.3487;
+  p3.orientation.z = -0.008559;
+  p3.orientation.w = 0.04464;
+  points.push_back(p3);
+  
+  geometry_msgs::Pose p5;
+  p3.position.x = 0.6834;
+  p3.position.y = 0.2276;
+  p3.position.z = 0.627;
+  p3.orientation.x = 1.0;
+  p3.orientation.y = -0.0999;
+  p3.orientation.z = 0.0512;
+  p3.orientation.w = 0.0117;
+  points.push_back(p3);
+
+  geometry_msgs::Pose p6;
+  p2.position.x = 0.565;
+  p2.position.y = 0.5523;
+  p2.position.z = 0.410;
+  p2.orientation.x = 0.996;
+  p2.orientation.y = 0.055;
+  p2.orientation.z = 0.037;
+  p2.orientation.w = 0.0469;
+  points.push_back(p2);
+  
+  geometry_msgs::Pose p7;
+  p1.position.x = 0.098;
+  p1.position.y = 0.7;
+  p1.position.z = 0.011;
+  p1.orientation.x = 1.0;
+  p1.orientation.y = 0.01;
+  p1.orientation.z = 0.025;
+  p1.orientation.w = -0.0133;
+  points.push_back(p1);
+
   moveit_msgs::RobotTrajectory rt;
   double fraction = left_arm_.computeCartesianPath(points, 0.01, 0.0, rt);
   left_arm_.move();
-  
-  /*ros::Publisher head_control = nh_.advertise<baxter_core_msgs::HeadPanCommand>("/robot/head/command_head_pan", 60);
-  
-  baxter_core_msgs::HeadPanCommand hpc;
-  hpc.target = 0;
-  hpc.speed = 50;
-  head_control.publish(hpc);
-  ros::Duration(3.0).sleep();
-  hpc.target = 100;
-  head_control.publish(hpc);
-  ros::Duration(6.0).sleep();*/
-  
-  
+
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -273,6 +301,7 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
     tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
     
     // Assuming that yaw is the correct rotation angle. Needs to be fixed...
+    double r_angle = yaw;
     double init_angle = atan(it->second.dimensions_.y / it->second.dimensions_.x);
     Point tl = {it->second.pose_.position.x + cos(init_angle+yaw),
                 it->second.pose_.position.y + sin(init_angle+yaw)};
@@ -321,7 +350,7 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
 vector<moveit_msgs::PlaceLocation> ARWorldBuilder::findFreeLocations()
 {
     // Create a partiion of the freezone
-    double tolerance = 0.03; // Define a tolerance for the two gripper ends. 3cm for both.
+    double tolerance = 0.01; // Define a tolerance for the two gripper ends. 1cm for both.
     int num_partitions_x = table_freezone_.area.length/(block_size_+tolerance);
     int num_partitions_y = table_freezone_.area.width/(block_size_+tolerance);
     int num_partitions = num_partitions_x * num_partitions_y;
@@ -349,9 +378,11 @@ vector<moveit_msgs::PlaceLocation> ARWorldBuilder::findFreeLocations()
           geometry_msgs::Pose block_pose;
           block_pose.position.x = place.point.x + (place.area.length/2.0);
           block_pose.position.y = place.point.y + (place.area.width/2.0);
-          // FIX
-          block_pose.position.z = table_dimensions_.height;
-          block_pose.orientation.w = 1.0;
+          // Use the table's orientation to align the blocks
+          table_pose_mutex_.lock();
+          block_pose.position.z = table_pose_.position.z + (table_dimensions_.height/2);
+          block_pose.orientation = table_pose_.orientation;
+          table_pose_mutex_.unlock();
           
           geometry_msgs::PoseStamped goal_stamped;
           goal_stamped.header.frame_id = gd.base_link_;
