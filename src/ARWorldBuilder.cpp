@@ -8,7 +8,6 @@ using namespace std;
 using boost::shared_ptr;
 
 static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
-// static const float g_table_position[3] = { 0.608012, 1.21602, 0.60325 };
 
 ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) : 
 	nh_("~"),
@@ -76,6 +75,36 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	threads_.push_back(tg_.create_thread( boost::bind(&ARWorldBuilder::updateThread, this) ));
 	
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
+	ar_blocks_action_server_.start();
+
+	// Further Tests
+	/*geometry_msgs::Pose tpose;
+	tpose.position.x = 1.0;
+	tpose.position.y = 1.0;
+	tpose.position.z = 1.0;
+	tpose.orientation.w = 1.0;*/
+	
+	geometry_msgs::Pose b6pose;
+	b6pose.position.x = 0.622832;
+	b6pose.position.y = 0.287662;
+	b6pose.position.z = -0.264523;
+	b6pose.orientation.x = 0.706081;
+	b6pose.orientation.y = 0.112389;
+	b6pose.orientation.z = 0.695385;
+	b6pose.orientation.w = -0.0725117;
+	
+	geometry_msgs::Pose b14pose;
+	b14pose.position.x = 0.636082;
+	b14pose.position.y = 0.367458;
+	b14pose.position.z = -0.276704;
+	b14pose.orientation.x = 0.478385;
+	b14pose.orientation.y = 0.524679;
+	b14pose.orientation.z = 0.517999;
+	b14pose.orientation.w = 0.477007;
+	
+	// visual_tools_->publishCollisionBlock( tpose, "1000", 0.0635 );
+	visual_tools_->publishCollisionBlock( b6pose, "6", 0.0635 );
+	visual_tools_->publishCollisionBlock( b14pose, "14", 0.0635 );
 }
 
 ARWorldBuilder::~ARWorldBuilder()
@@ -245,7 +274,7 @@ void ARWorldBuilder::updateThread()
 	while( true ) {
 		// Update world by iterating over the ar_blocks_
 		updateWorld();
-		//ROS_INFO("UPDATING THE WORLD");
+		ROS_INFO("UPDATING THE WORLD");
 		loop_rate.sleep();
 		ros::spinOnce();
 	}
@@ -600,7 +629,7 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
     
     		unsigned int block_id = markers_msg->markers[i].id;
     
-		if( markers_msg->markers[i].confidence >= cutoff_confidence_  && block_id != 0 ) {
+		if( markers_msg->markers[i].confidence >= cutoff_confidence_  && markers_msg->markers[i].header.frame_id == "/base" ) {
 			// Eventually differentiate the different marker types
 			if(block_id == 12) {
 				// Handle the table. Assuming that the tag is placed on the bottom left of the table.
@@ -622,7 +651,7 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 				ar_blocks_[ block_id ].pose_ = markers_msg->markers[i].pose.pose;
 				ar_blocks_timestamps_[ block_id ].first = ar_blocks_timestamps_[ block_id ].second;
 				ar_blocks_timestamps_[ block_id ].second = ros::Time::now().toNSec();
-				//ar_blocks_[ block_id ].printInfo();
+				// ar_blocks_[ block_id ].printInfo();
 			}
 		}
 	}
@@ -639,7 +668,7 @@ void ARWorldBuilder::setupCageEnvironment()
 
 	// Setup the table
 	ROS_INFO("Adding table to the cage environment scene...");
-	visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), 0.5842 - (g_table_dimensions[1]/2), 0.0, g_table_dimensions[1], g_table_dimensions[0], g_table_dimensions[2], "table");
+	// visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), 0.5842 - (g_table_dimensions[1]/2), 0.0, g_table_dimensions[1], g_table_dimensions[0], g_table_dimensions[2], "table");
 	
 	// Setup the walls
 	
@@ -659,7 +688,8 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		if(ar_blocks_kalman_.find(it->first) != ar_blocks_kalman_.end()) {
+		// Ignore filtering for now
+		/*if(ar_blocks_kalman_.find(it->first) != ar_blocks_kalman_.end()) {
 			ARBlock block(it->first, ar_blocks_kalman_[it->first]);
 			// Ignore the orientation kalman filter for now
 			block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
@@ -668,9 +698,10 @@ void ARWorldBuilder::updateWorld()
 		else {	
 			// collision_object_pub_.publish( it->second.toCollisionObject() );
 			visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
-		}	
+		}*/
 		// Block Info
-	 	//it->second.printInfo();
+		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
+	 	it->second.printInfo();
 	}
 }
 

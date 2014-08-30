@@ -4,8 +4,9 @@
 namespace nxr {
 
 ARBlocksServerTest::ARBlocksServerTest() :
-  ar_blocks_client_("ar_blocks", true)
+  ar_blocks_client_("/ar_blocks_environment/ar_blocks_action_server", true)
 {
+  ar_blocks_client_.waitForServer();
 }
 
 void ARBlocksServerTest::arBlocksDoneCallback(const actionlib::SimpleClientGoalState &state,

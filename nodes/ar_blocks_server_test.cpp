@@ -8,5 +8,7 @@ int main(int argc, char **argv)
   nxr::ARBlocksServerTest ar_st;
   ar_st.runAllTests();
   
+  ros::spin();
+    
   return 0;
 }
