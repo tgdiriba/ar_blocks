@@ -56,6 +56,20 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	setupCageEnvironment();
 	left_arm_.setSupportSurfaceName("table");
 	right_arm_.setSupportSurfaceName("table");
+	
+	// Calculate the table information
+	// Start with the default measured state
+	table_pose_.position.x = 0.6069 + (g_table_dimensions[0]/2);	// Using the distance to the front of the table
+	table_pose_.position.y = 0.5842 - (g_table_dimensions[1]/2);	// Using the distance to the center of the table on the y-axis
+	table_pose_.position.z = 0.0;					// Approximation
+	table_pose_.orientation.x = 0.0;
+	table_pose_.orientation.y = 0.0;
+	table_pose_.orientation.z = 0.0;
+	table_pose_.orientation.w = 1.0;
+	
+	// Define the freezone to be the bottom left of the table and the position of the table tag as the top left
+	table_freezone_.point.x = table_pose_.position.x - (g_table_dimensions[0]/2);
+	table_freezone_.point.y = table_pose_.position.y + (g_table_dimensions[1]/2);
 
 	// Initialize threads
 	ROS_INFO("Spawning worker threads...");
@@ -553,21 +567,32 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 	for(int i = 0; i < markers_msg->markers.size(); i++) {
 		// Use a cutoff confidence, by default this is 0
     
-    unsigned int block_id = markers_msg->markers[i].id;
+    		unsigned int block_id = markers_msg->markers[i].id;
     
 		if( markers_msg->markers[i].confidence >= cutoff_confidence_  && block_id != 0 ) {
 			// Eventually differentiate the different marker types
-			if(ar_blocks_.find(block_id) == ar_blocks_.end()) {
-				ar_blocks_[ block_id ].id_ = markers_msg->markers[i].id;
-        			ar_blocks_timestamps_[ block_id ] = pair<ull, ull>(ros::Time::now().toNSec(), ros::Time::now().toNSec());
-				addBaseKalmanFilter(block_id);
+			if(block_id == 12) {
+				// Handle the table. Assuming that the tag is placed on the bottom left of the table.
+				table_pose_mutex_.lock();
+				table_pose_.position.x = markers_msg->markers[i].pose.pose.position.x + (g_table_dimensions[0]/2) - 8.01111111;
+				table_pose_.position.y = markers_msg->markers[i].pose.pose.position.y - (g_table_dimensions[1]/2) + 2.2;
+				table_pose_.position.z = markers_msg->markers[i].pose.pose.position.z;
+				table_pose_.orientation = markers_msg->markers[i].pose.pose.orientation;
+				table_pose_mutex_.unlock();
 			}
-			
-      ar_blocks_[ block_id ].time_stamp_ = ros::Time::now();
-			ar_blocks_[ block_id ].pose_ = markers_msg->markers[i].pose.pose;
-      			ar_blocks_timestamps_[ block_id ].first = ar_blocks_timestamps_[ block_id ].second;
-      			ar_blocks_timestamps_[ block_id ].second = ros::Time::now().toNSec();
-			//ar_blocks_[ block_id ].printInfo();
+			else {
+				if(ar_blocks_.find(block_id) == ar_blocks_.end()) {
+					ar_blocks_[ block_id ].id_ = markers_msg->markers[i].id;
+					ar_blocks_timestamps_[ block_id ] = pair<ull, ull>(ros::Time::now().toNSec(), ros::Time::now().toNSec());
+					addBaseKalmanFilter(block_id);
+				}
+				
+	      ar_blocks_[ block_id ].time_stamp_ = ros::Time::now();
+				ar_blocks_[ block_id ].pose_ = markers_msg->markers[i].pose.pose;
+				ar_blocks_timestamps_[ block_id ].first = ar_blocks_timestamps_[ block_id ].second;
+				ar_blocks_timestamps_[ block_id ].second = ros::Time::now().toNSec();
+				//ar_blocks_[ block_id ].printInfo();
+			}
 		}
 	}
 	
