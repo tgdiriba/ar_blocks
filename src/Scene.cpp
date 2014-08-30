@@ -11,7 +11,7 @@ namespace nxr {
 Scene::Scene(ARBlocksInterface *parent) :
   QGraphicsScene(),
   parent_(parent),
-  id_count_(0)
+  id_count_(1)
 {
   addLine(0,0,0,1,QPen(Qt::transparent,1));
 }
@@ -25,7 +25,7 @@ void Scene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     if(block == 0 && event->button() == Qt::LeftButton) {
       block_ids_[id_count_] = new Rectangle(x,y);
       addItem(block_ids_[id_count_]);
-      block_store_[parent_->current_layer_number_].push_back(id_count_);
+      //block_store_[parent_->current_layer_number_].push_back(id_count_);
       id_count_++;
       parent_->statusBar()->showMessage(QString("Rectangle added at %1, %2").arg(x).arg(y));
     }
@@ -47,10 +47,10 @@ void Scene::mousePressEvent(QGraphicsSceneMouseEvent *event)
      
       // Remove the  
       if(p_id != block_ids_.end()) {
-        std::vector<int>::iterator removed_block = find(block_store_[parent_->current_layer_number_].begin(), block_store_[parent_->current_layer_number_].end(), p_id->first);
-        if(removed_block != block_store_[parent_->current_layer_number_].end()) {
-          block_store_[parent_->current_layer_number_].erase(removed_block);
-        }
+        //std::vector<int>::iterator removed_block = find(block_store_[parent_->current_layer_number_].begin(), block_store_[parent_->current_layer_number_].end(), p_id->first);
+        //if(removed_block != block_store_[parent_->current_layer_number_].end()) {
+          //block_store_[parent_->current_layer_number_].erase(removed_block);
+        //}
         block_ids_.erase(p_id);
         parent_->statusBar()->showMessage(QString("Rectangle added at %1, %2").arg(x).arg(y));
       }
