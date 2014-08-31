@@ -20,8 +20,6 @@ enum BLOCK_TYPE {
 	BLOCK_NUM
 };
 
-// const float g_block_sizes[BLOCK_NUM]; // = { 0.063, 0.051, 0.045 };
-
 struct Dimensions {
 	float x;
 	float y;
@@ -49,7 +47,6 @@ public:
 		Dimensions dimensions_;
 	};
   
-
 	// Debugging
 	void printInfo();
 

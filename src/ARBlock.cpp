@@ -2,7 +2,7 @@
 
 namespace nxr {
 
-static const float g_block_sizes[BLOCK_NUM] = { 0.063, 0.051, 0.045 };
+static const float g_block_sizes[BLOCK_NUM] = { 0.0635, 0.051, 0.045 };
 
 ARBlock::ARBlock(unsigned int b_type) : block_type_(b_type)
 {
@@ -103,7 +103,7 @@ moveit_msgs::CollisionObject ARBlock::toCollisionObject(std::string planning_fra
 
 bool blockCompare(const ar_blocks::Block &a, const ar_blocks::Block &b)
 {
-   return a.pose_stamped.pose.position.y > b.pose_stamped.pose.position.y;
+   return a.pose_stamped.pose.position.x > b.pose_stamped.pose.position.x;
 }
 
-}
+} // namespace nxr

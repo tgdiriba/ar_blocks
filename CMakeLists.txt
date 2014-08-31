@@ -150,7 +150,6 @@ add_definitions(${QT_DEFINITIONS})
 add_library(ar_blocks
 	src/ARBlock.cpp
 	src/ARWorldBuilder.cpp
-	src/GripperJointUpdater.cpp
 )
 target_link_libraries(ar_blocks 
 	${catkin_LIBRARIES}
@@ -186,13 +185,3 @@ target_link_libraries(ar_blocks_interface
 	${Boost_LIBRARIES}
   ${QT_LIBRARIES}
 )
-add_dependencies(ar_blocks_interface ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
-
-add_executable(gripper_state_translator nodes/gripper_state_translator.cpp)
-target_link_libraries(gripper_state_translator
-	${catkin_LIBRARIES}
-	pthread
-	ar_blocks
-)
-add_dependencies(gripper_state_translator ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
-

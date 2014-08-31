@@ -24,7 +24,6 @@
 #include <ar_track_alvar/Kalman.h>
 #include <ar_track_alvar/Platform.h>
 #include <ar_track_alvar/AlvarException.h>
-// #include <tf/Transform.h>
 #include <tf/transform_datatypes.h>
 #include <baxter_core_msgs/HeadPanCommand.h>
 #include <boost/thread.hpp>
@@ -137,19 +136,8 @@ public:
 	moveit_simple_grasps::GraspData right_grasp_data_;
 	moveit_visual_tools::VisualToolsPtr visual_tools_;
 
-	// Pick and Place Routines
-	
-	
 	// Debugging Routines
 	void printInfo();
-
-	// MoveIt! Tests
-	void runAllTests();
-	void primaryTest();
-	void armMovementTest();	
-	void endpointControlTest();
-	void gripperControlTest();
-	void visualizeGraspsTest();
 	
 };
 
