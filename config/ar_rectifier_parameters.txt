@@ -1,0 +1,15 @@
+AR Rectifier Parameters
+=======================
+
+Fix
+---
++ x: Roughly 0.0m
++ y: Roughly 0.15m
++ z: Roughly -0.25m
+
+Orientation
+---
++ x: 0.095
++ y: -0.875
++ z: -0.42
++ w: -0.21

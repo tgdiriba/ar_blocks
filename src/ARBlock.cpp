@@ -71,12 +71,14 @@ int ARBlock::topSide()
   
   // Figure out the ranges. Easier to use quaternion?
   return 0;
+ 
+  /* Estimate which side of the block is upward face 
   if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
   if(roll <= -M_PI/4 && roll > -3*M_PI/4 && yaw <= M_PI/4 && yaw > -M_PI/4) return 1;
   if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
   if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
   if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
-  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
+  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;*/
 }
 
 ar_blocks::Block ARBlock::toBlockMsg()
