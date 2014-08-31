@@ -28,7 +28,6 @@ public:
   friend class Scene;
   ARBlocksInterface();
   
-  // Try and fit around 20 blocks in the scene
 private:
   // Qt
   QVBoxLayout *center_layout_;

@@ -22,12 +22,7 @@ ARBlocksInterface::ARBlocksInterface() :
   current_layer_cb_ = new QComboBox;
   current_layer_cb_->addItem("1");
   
-  // Outdated
-  current_layer_ = new QLabel("1");
-  current_layer_->setAlignment(Qt::AlignRight);
-  
   block_scene_ = new Scene(this);
-  // block_scene_->setSceneRect(-scene_width/2, -scene_height/2, scene_width/2, scene_height/2);
   QGraphicsView *qview = new QGraphicsView(block_scene_);
   qview->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   qview->setFrameStyle(0);
@@ -112,22 +107,12 @@ ARBlocksInterface::ARBlocksInterface() :
   connect(build_btn_, SIGNAL(clicked()), this, SLOT(buildBtnHandler()));
   
   connect(current_layer_cb_, SIGNAL(currentIndexChanged(int)), this, SLOT(indexChangeHandler())); 
- 
+
+  // Uncomment on release 
   // ar_blocks_client_.waitForServer();
 
   statusBar()->showMessage("");
 
-  // Testing
-  ar_blocks::Layer l;
-  ar_blocks::Block b;
-  b.length = 5.0;
-  b.width = 5.0;
-  b.height = 5.0;
-  b.pose_stamped.pose.position.x = table_dim_x / 2.0;
-  b.pose_stamped.pose.position.y = table_dim_y / 2.0;
-  l.blocks.push_back(b);
-  // drawLayer(l); 
-  
   setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
   layout()->setSizeConstraint(QLayout::SetFixedSize);
 
@@ -135,8 +120,6 @@ ARBlocksInterface::ARBlocksInterface() :
 
   drawTable();
 
-  block_scene_->addRect(0.0, 0.0, 5, 5);
-  
 }
 
 void ARBlocksInterface::indexChangeHandler()
@@ -151,7 +134,7 @@ void ARBlocksInterface::drawTable()
   double y_ratio = (scene_height - 20.0)/ table_dim_y;
   double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio; 
   
-  block_scene_->addRect(0.0, 0.0, ratio*table_dim_x, ratio*table_dim_y, QPen(Qt::red));
+  block_scene_->addRect(0.0, scene_height/5, ratio*table_dim_x, ratio*table_dim_y, QPen(Qt::red));
 }
 
 void ARBlocksInterface::drawScene()

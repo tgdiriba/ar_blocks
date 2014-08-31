@@ -6,9 +6,11 @@
 #include <moveit_msgs/CollisionObject.h>
 #include <ar_track_alvar/Filter.h>
 #include <ar_track_alvar/Kalman.h>
+#include <tf/transform_datatypes.h>
 #include <boost/shared_ptr.hpp>
 #include <sstream>
 #include <string>
+#include <cmath>
 #include <ar_blocks/Block.h>
 
 namespace nxr {
@@ -32,6 +34,7 @@ public:
 	ARBlock(unsigned int b_type = BLOCK_A);
 	ARBlock(unsigned int id, const boost::shared_ptr<alvar::Kalman> &k);
 	ARBlock(float *dims, int id = 0);	
+	int topSide();
 	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("base"));	
 	alvar::Kalman toKalman();
   ar_blocks::Block toBlockMsg();

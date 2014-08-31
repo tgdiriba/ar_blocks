@@ -8,7 +8,6 @@ using namespace std;
 using boost::shared_ptr;
 
 static const float g_table_dimensions[3] = { 0.608012, 1.21602, 0.60325 };
-// static const float g_table_position[3] = { 0.608012, 1.21602, 0.60325 };
 
 ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) : 
 	nh_("~"),
@@ -76,6 +75,36 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	threads_.push_back(tg_.create_thread( boost::bind(&ARWorldBuilder::updateThread, this) ));
 	
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
+	ar_blocks_action_server_.start();
+
+	// Further Tests
+	/*geometry_msgs::Pose tpose;
+	tpose.position.x = 1.0;
+	tpose.position.y = 1.0;
+	tpose.position.z = 1.0;
+	tpose.orientation.w = 1.0;*/
+	
+	geometry_msgs::Pose b6pose;
+	b6pose.position.x = 0.622832;
+	b6pose.position.y = 0.287662;
+	b6pose.position.z = -0.264523;
+	b6pose.orientation.x = 0.706081;
+	b6pose.orientation.y = 0.112389;
+	b6pose.orientation.z = 0.695385;
+	b6pose.orientation.w = -0.0725117;
+	
+	geometry_msgs::Pose b14pose;
+	b14pose.position.x = 0.636082;
+	b14pose.position.y = 0.367458;
+	b14pose.position.z = -0.276704;
+	b14pose.orientation.x = 0.478385;
+	b14pose.orientation.y = 0.524679;
+	b14pose.orientation.z = 0.517999;
+	b14pose.orientation.w = 0.477007;
+	
+	// visual_tools_->publishCollisionBlock( tpose, "1000", 0.0635 );
+	visual_tools_->publishCollisionBlock( b6pose, "6", 0.0635 );
+	visual_tools_->publishCollisionBlock( b14pose, "14", 0.0635 );
 }
 
 ARWorldBuilder::~ARWorldBuilder()
@@ -108,39 +137,79 @@ void ARWorldBuilder::scanEnvironment()
   
   vector<geometry_msgs::Pose> points;
   geometry_msgs::Pose p1;
-  p1.position.x = 1;
-  p1.position.y = 1;
-  p1.position.z = 1;
-  p1.orientation.x = 1;
-  p1.orientation.y = 1;
-  p1.orientation.z = 1;
-  p1.orientation.w = 1;
+  p1.position.x = 0.098;
+  p1.position.y = 0.7;
+  p1.position.z = 0.011;
+  p1.orientation.x = 1.0;
+  p1.orientation.y = 0.01;
+  p1.orientation.z = 0.025;
+  p1.orientation.w = -0.0133;
   points.push_back(p1);
 
   geometry_msgs::Pose p2;
-  p2.position.x = 1;
-  p2.position.y = 1;
-  p2.position.z = 1;
-  p2.orientation.x = 1;
-  p2.orientation.y = 1;
-  p2.orientation.z = 1;
-  p2.orientation.w = 1;
+  p2.position.x = 0.565;
+  p2.position.y = 0.5523;
+  p2.position.z = 0.410;
+  p2.orientation.x = 0.996;
+  p2.orientation.y = 0.055;
+  p2.orientation.z = 0.037;
+  p2.orientation.w = 0.0469;
   points.push_back(p2);
   
   geometry_msgs::Pose p3;
-  p3.position.x = 1;
-  p3.position.y = 1;
-  p3.position.z = 1;
-  p3.orientation.x = 1;
-  p3.orientation.y = 1;
-  p3.orientation.z = 1;
-  p3.orientation.w = 1;
+  p3.position.x = 0.6834;
+  p3.position.y = 0.2276;
+  p3.position.z = 0.627;
+  p3.orientation.x = 1.0;
+  p3.orientation.y = -0.0999;
+  p3.orientation.z = 0.0512;
+  p3.orientation.w = 0.0117;
   points.push_back(p3);
   
+  geometry_msgs::Pose p4;
+  p3.position.x = 0.6730;
+  p3.position.y = -0.1514;
+  p3.position.z = 0.44046;
+  p3.orientation.x = 0.9361;
+  p3.orientation.y = -0.3487;
+  p3.orientation.z = -0.008559;
+  p3.orientation.w = 0.04464;
+  points.push_back(p3);
+  
+  geometry_msgs::Pose p5;
+  p3.position.x = 0.6834;
+  p3.position.y = 0.2276;
+  p3.position.z = 0.627;
+  p3.orientation.x = 1.0;
+  p3.orientation.y = -0.0999;
+  p3.orientation.z = 0.0512;
+  p3.orientation.w = 0.0117;
+  points.push_back(p3);
+
+  geometry_msgs::Pose p6;
+  p2.position.x = 0.565;
+  p2.position.y = 0.5523;
+  p2.position.z = 0.410;
+  p2.orientation.x = 0.996;
+  p2.orientation.y = 0.055;
+  p2.orientation.z = 0.037;
+  p2.orientation.w = 0.0469;
+  points.push_back(p2);
+  
+  geometry_msgs::Pose p7;
+  p1.position.x = 0.098;
+  p1.position.y = 0.7;
+  p1.position.z = 0.011;
+  p1.orientation.x = 1.0;
+  p1.orientation.y = 0.01;
+  p1.orientation.z = 0.025;
+  p1.orientation.w = -0.0133;
+  points.push_back(p1);
+
   moveit_msgs::RobotTrajectory rt;
   double fraction = left_arm_.computeCartesianPath(points, 0.01, 0.0, rt);
   left_arm_.move();
-  
+
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -205,7 +274,7 @@ void ARWorldBuilder::updateThread()
 	while( true ) {
 		// Update world by iterating over the ar_blocks_
 		updateWorld();
-		//ROS_INFO("UPDATING THE WORLD");
+		ROS_INFO("UPDATING THE WORLD");
 		loop_rate.sleep();
 		ros::spinOnce();
 	}
@@ -261,6 +330,7 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
     tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
     
     // Assuming that yaw is the correct rotation angle. Needs to be fixed...
+    double r_angle = yaw;
     double init_angle = atan(it->second.dimensions_.y / it->second.dimensions_.x);
     Point tl = {it->second.pose_.position.x + cos(init_angle+yaw),
                 it->second.pose_.position.y + sin(init_angle+yaw)};
@@ -309,7 +379,7 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
 vector<moveit_msgs::PlaceLocation> ARWorldBuilder::findFreeLocations()
 {
     // Create a partiion of the freezone
-    double tolerance = 0.03; // Define a tolerance for the two gripper ends. 3cm for both.
+    double tolerance = 0.01; // Define a tolerance for the two gripper ends. 1cm for both.
     int num_partitions_x = table_freezone_.area.length/(block_size_+tolerance);
     int num_partitions_y = table_freezone_.area.width/(block_size_+tolerance);
     int num_partitions = num_partitions_x * num_partitions_y;
@@ -337,9 +407,11 @@ vector<moveit_msgs::PlaceLocation> ARWorldBuilder::findFreeLocations()
           geometry_msgs::Pose block_pose;
           block_pose.position.x = place.point.x + (place.area.length/2.0);
           block_pose.position.y = place.point.y + (place.area.width/2.0);
-          // FIX
-          block_pose.position.z = table_dimensions_.height;
-          block_pose.orientation.w = 1.0;
+          // Use the table's orientation to align the blocks
+          table_pose_mutex_.lock();
+          block_pose.position.z = table_pose_.position.z + (table_dimensions_.height/2);
+          block_pose.orientation = table_pose_.orientation;
+          table_pose_mutex_.unlock();
           
           geometry_msgs::PoseStamped goal_stamped;
           goal_stamped.header.frame_id = gd.base_link_;
@@ -557,7 +629,7 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
     
     		unsigned int block_id = markers_msg->markers[i].id;
     
-		if( markers_msg->markers[i].confidence >= cutoff_confidence_  && block_id != 0 ) {
+		if( markers_msg->markers[i].confidence >= cutoff_confidence_  && markers_msg->markers[i].header.frame_id == "/base" ) {
 			// Eventually differentiate the different marker types
 			if(block_id == 12) {
 				// Handle the table. Assuming that the tag is placed on the bottom left of the table.
@@ -579,7 +651,7 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 				ar_blocks_[ block_id ].pose_ = markers_msg->markers[i].pose.pose;
 				ar_blocks_timestamps_[ block_id ].first = ar_blocks_timestamps_[ block_id ].second;
 				ar_blocks_timestamps_[ block_id ].second = ros::Time::now().toNSec();
-				//ar_blocks_[ block_id ].printInfo();
+				// ar_blocks_[ block_id ].printInfo();
 			}
 		}
 	}
@@ -596,7 +668,7 @@ void ARWorldBuilder::setupCageEnvironment()
 
 	// Setup the table
 	ROS_INFO("Adding table to the cage environment scene...");
-	visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), 0.5842 - (g_table_dimensions[1]/2), 0.0, g_table_dimensions[1], g_table_dimensions[0], g_table_dimensions[2], "table");
+	// visual_tools_->publishCollisionTable(0.6069 + (g_table_dimensions[0]/2), 0.5842 - (g_table_dimensions[1]/2), 0.0, g_table_dimensions[1], g_table_dimensions[0], g_table_dimensions[2], "table");
 	
 	// Setup the walls
 	
@@ -616,7 +688,8 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		if(ar_blocks_kalman_.find(it->first) != ar_blocks_kalman_.end()) {
+		// Ignore filtering for now
+		/*if(ar_blocks_kalman_.find(it->first) != ar_blocks_kalman_.end()) {
 			ARBlock block(it->first, ar_blocks_kalman_[it->first]);
 			// Ignore the orientation kalman filter for now
 			block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
@@ -625,9 +698,10 @@ void ARWorldBuilder::updateWorld()
 		else {	
 			// collision_object_pub_.publish( it->second.toCollisionObject() );
 			visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
-		}	
+		}*/
 		// Block Info
-	 	//it->second.printInfo();
+		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
+	 	it->second.printInfo();
 	}
 }
 

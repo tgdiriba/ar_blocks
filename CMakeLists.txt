@@ -174,6 +174,15 @@ target_link_libraries(ar_blocks_environment
 )
 add_dependencies(ar_blocks_environment ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
 
+add_executable(ar_blocks_server_test nodes/ar_blocks_server_test.cpp src/ARBlocksServerTest.cpp)
+target_link_libraries(ar_blocks_server_test
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+  pthread
+  ar_blocks
+)
+add_dependencies(ar_blocks_server_test ${catkin_EXPORTED_TARGETS} moveit_msgs_gencpp ar_blocks_msgs_generate_message_cpp)
+
 add_executable(ar_blocks_interface nodes/ar_blocks_interface.cpp 
   src/ARBlocksInterface.cpp
   src/Rectangle.cpp

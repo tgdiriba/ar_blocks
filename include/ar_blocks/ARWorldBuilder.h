@@ -93,7 +93,7 @@ public:
   // Table Properties.
   Table table_dimensions_;
   boost::mutex table_pose_mutex_;
-  geometry_msgs::Pose table_pose_;
+  geometry_msgs::Pose table_pose_;  
   Rectangle table_freezone_;
   
   // Block Handling
