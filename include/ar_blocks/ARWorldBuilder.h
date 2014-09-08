@@ -76,7 +76,7 @@ public:
 	void arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::ConstPtr& markers_msg);
 	void updateWorld();	
 	
-	void createOrderedStack();
+	bool createOrderedStack();
 	
 	void updateThread();
 	boost::thread_group tg_;

@@ -72,7 +72,6 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 
 	left_arm_ = planning_interface::MoveGroup("left_arm");
 	right_arm_ = planning_interface::MoveGroup("right_arm");
-	both_arms_ = planning_interface::MoveGroup("both_arms");
 
 	// Initialize threads
 	ROS_INFO("Spawning worker threads...");
@@ -262,87 +261,8 @@ void ARWorldBuilder::filterBlocks()
 	}
 }
 
-bool ARWorldBuilder::clearStage()
-{
-	// Define stage area...possibly another input parameter
-	// For now default to 1ft x 1ft air space in front of the robot
-
-	return false;	
-}
-
 bool ARWorldBuilder::createOrderedStack()
 {
-	// Assert there is a clear stage
-	if(!clearStage()) return false;
-	
-	// Stack all blocks ontop of each other, largest to smallest	
-	priority_queue<ARBlock> ordered_stack;
-	
-	pthread_mutex_lock(&ar_blocks_mutex_);
-	map<unsigned int, ARBlock>::iterator it = ar_blocks_.begin();
-	for( ; it != ar_blocks_.end(); it++) ordered_stack.push(it->second);
-	pthread_mutex_unlock(&ar_blocks_mutex_);
-	
-	// Make sure that it's not empty
-	if(ordered_stack.empty()) return true;
-	
-	ARBlock top_block, current_block;
-	bool block_pick = false, block_success = false;
-	unsigned int stack_height = 0;
-	
-	//Define base location
-	manipulation_msgs::PlaceLocation top_location;
-	geometry_msgs::PoseStamped pl_pose_stamped;
-	geometry_msgs::Pose pl_pose;
-	
-	do {
-		current_block = ordered_stack.top();
-		
-		// Place the current block ontop of top_block
-		top_location = manipulation_msgs::PlaceLocation();
-		pl_pose_stamped = geometry_msgs::PoseStamped();
-		pl_pose = geometry_msgs::Pose();
-		
-		// Initialize the stack
-		if(stack_height == 0) {
-			pl_pose.position.x = ;
-			pl_pose.position.y = ;
-			pl_pose.position.z = ;
-			pl_pose.orientation.w = 1.0; // Make upwards
-		}
-		else {
-			pl_pose.position.x = ;
-			pl_pose.position.y = ;
-			pl_pose.position.z = ;
-			pl_pose.orientation.w = 1.0; // Make upwards
-		}
-	
-		pl_pose_stamped.frame_id = left_arm.getPlanningFrame();
-		pl_pose_stamped.pose = pl_pose;
-	
-		top_location.place_pose = pl_pose_stamped;
-		
-		ROS_INFO("Picking and placing block %d...", stack_height+1);
-		if(top_block.pose_.position.y < 0) {
-			block_pick = left_arm_.pick(current_block.getStringId());
-			block_place = left_arm_.place(current_block.getStringId(), base_location);
-		}
-		else {
-			block_pick = right_arm_.pick(current_block.getString());
-			block_place = right_arm_.place(current_block.getString(), base_location);
-		}
-		ROS_INFO("%s block %d.", block_pick ? "Successfully picked up" : "Could not pick up", stack_height+1);
-		ROS_INFO("%s block %d.", block_place ? "Successfully placed" : "Could not place", stack_height+1);
-	
-		// Assert that the base block was picked up for now
-		// Add correction/retry code later
-		if(!block_pick || !block_place) return false;
-	 		
-		top_block = current_block;
-		ordered_stack.pop();
-		stack_height++;
-	} while(!ordered_stack.empty());
-	
 	return false;
 }
 
