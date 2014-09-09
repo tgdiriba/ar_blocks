@@ -1,19 +1,30 @@
-#ifndef BLOCK_H
-#define BLOCK_H
+#ifndef RECTANGLE_H
+#define RECTANGLE_H
 
 #include <QtGui/QtGui>
 #include <QtGui/QGraphicsItem>
 #include <QtGui/QPainter>
 
+namespace nxr {
+
 class Rectangle : public QGraphicsItem
 {
 public:
-  Rectangle(qreal, qreal, int width = 10, int height = 10);
+
+  enum { Type = UserType + 1 };
+
+  Rectangle(qreal, qreal, int id=-1, int length = 10, int width = 10);
   void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*);
-  QRectF boundingRect() const { return QRectF(-width_/2 - 1.0, -height_/2 - 1.0, width_ + 2.0, height_ + 2.0); }
-private:
+  QRectF boundingRect() const { return QRectF(-length_/2 - 1.0, -width_/2 - 1.0, length_ + 2.0, width_ + 2.0); }
+  int type() const
+  {
+    return Type;
+  }
+  int id_;
+  int length_;
   int width_;
-  int height_;
 };
 
-#endif // BLOCK_H
+} // namespace nxr
+
+#endif // RECTANGLE_H

@@ -3,6 +3,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsSceneContextMenuEvent>
 #include <ar_blocks/ARBlocksInterface.h>
+#include <ar_blocks/ARWorldBuilder.h>
 #include <QMenu>
 #include <QAction>
 #include <iostream>
@@ -34,19 +35,17 @@ ar_blocks::Structure Scene::blockStoreToStructure()
       
       b.pose_stamped.header.frame_id = "/base";
       b.pose_stamped.header.stamp = ros::Time::now();
-      b.pose_stamped.pose.position.x = block_store_[i][j]->x() - int(table_dim_x*ratio/2); // CALCULATE position relative to the center of the table
-      b.pose_stamped.pose.position.y = block_store_[i][j]->y() + int(table_dim_y*ratio/2);
+      b.pose_stamped.pose.position.x = block_store_[i][j]->x() - ; // CALCULATE position relative to table
+      b.pose_stamped.pose.position.y = block_store_[i][j]->y();
       b.pose_stamped.pose.position.z = 0.0;
       b.pose_stamped.pose.orientation.x = 0.0;
       b.pose_stamped.pose.orientation.y = 0.0;
       b.pose_stamped.pose.orientation.z = 0.0;
       b.pose_stamped.pose.orientation.w = 1.0;
-       
+      
       t.layers[i].blocks.push_back(b);
     }
   }
-  
-  return t;
 }
 
 void Scene::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -77,12 +76,6 @@ void Scene::mousePressEvent(QGraphicsSceneMouseEvent *event)
       delete block;
     }
   }
-
-  QList<QGraphicsItem*> lit = items();
-  for(int i = 0; i < lit.size(); i++) {
-    std::cout << (lit[i]->type() == Rectangle::Type) << std::endl;
-  }
-
 }
 
 void Scene::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)

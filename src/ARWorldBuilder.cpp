@@ -14,7 +14,7 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
   ar_blocks_action_server_(nh_, "ar_blocks_action_server", boost::bind(&ARWorldBuilder::actionServerCallback, this, _1), false),
 	left_arm_("left_arm"),
 	right_arm_("right_arm"),
-  block_size_(0.063),
+  block_size_(0.0635),
 	cutoff_confidence_(cutoff)
 {
 	ROS_INFO("Constructing ARWorldBuilder...");

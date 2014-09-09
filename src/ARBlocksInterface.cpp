@@ -16,7 +16,7 @@ ARBlocksInterface::ARBlocksInterface() :
   
   block_size_layout_ = new QHBoxLayout;
   block_size_label_ = new QLabel("Block Size: \t");
-  block_size_input_ = new QLineEdit;
+  block_size_input_ = new QLineEdit("6.35");
   
   left_panel_title_ = new QLabel("Layer Creator");
   current_layer_cb_ = new QComboBox;
@@ -125,7 +125,8 @@ ARBlocksInterface::ARBlocksInterface() :
 void ARBlocksInterface::indexChangeHandler()
 {
   current_layer_number_ = current_layer_cb_->currentIndex()+1;
-  redrawScene(); 
+  goal_structure_.goal_structure = block_scene_->blockStoreToStructure();
+  redrawScene();
 }
 
 void ARBlocksInterface::drawTable()
@@ -156,12 +157,20 @@ void ARBlocksInterface::drawLayer(ar_blocks::Layer layer, QPen pen, QBrush brush
 
 void ARBlocksInterface::drawStaticLayer(int layer_number)
 {
-  /*if(layer_number < layer_count_ && layer_number > 0) {
-    std::vector<ar_blocks::Block> &blocks = goal_structure_.goal_structure.layers[layer_number].blocks;
-    for(int i = 0; i < goal_structure_.goal_structure.layers[layer_number].blocks.size(); i++) {
-      block_scene_->addRect(-blocks[i].pose_stamped.pose.position.y, blocks[i].pose_stamped.pose.position.x, ratio * blocks[i].length, ratio * blocks[i].width, QPen(Qt::gray));
+  if(layer_number < layer_count_ && layer_number > 0) {
+    std::vector<ar_blocks::Block> &blocks = goal_structure_.goal_structure.layers[layer_number-1].blocks;
+    
+    for(int i = 0; i < goal_structure_.goal_structure.layers[layer_number-1].blocks.size(); i++) {
+      /*block_scene_->addRect(
+        blocks[i].pose_stamped.pose.position.x + (table_dim_x*ratio/2),
+        int((table_dim_y*ratio/2) - blocks[i].pose_stamped.pose.position.y), 
+        blocks[i].length, 
+        blocks[i].width, 
+        QPen(Qt::gray)
+      );*/
     }
-  }*/
+    
+  }
 }
 
 void ARBlocksInterface::drawDynamicLayer(int layer_number)
@@ -212,7 +221,7 @@ void ARBlocksInterface::removeLayerBtnHandler()
   else if(current_layer_number_ == 1) {
     statusBar()->showMessage("Cleared initial layer.");
     block_scene_->clear();
-    redrawScene();
+    // redrawScene();
   }
   else {
     block_scene_->clear();
@@ -232,7 +241,7 @@ void ARBlocksInterface::addLayerBtnHandler()
     statusBar()->showMessage("Can only add to the top layer.");
   }
   else {
-    block_scene_->block_store_.push_back( std::vector<int>() );
+    block_scene_->block_store_.push_back( std::vector<nxr::Rectangle*>() );
     layer_count_++;
     current_layer_number_++;
     std::stringstream ss;

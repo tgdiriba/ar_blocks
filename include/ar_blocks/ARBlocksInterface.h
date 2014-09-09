@@ -11,13 +11,13 @@
 
 namespace nxr {
 
-static int scene_width = 630;
+/*static int scene_width = 630;
 static int scene_height = 500;
 static double table_dim_x = 121.602; 
 static double table_dim_y = 60.8012;
 static double x_ratio = scene_width/table_dim_x;
 static double y_ratio = scene_height/table_dim_y;
-static double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio;
+static double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio;*/
 
 class ARBlocksInterface : public QMainWindow
 {

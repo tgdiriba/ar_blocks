@@ -1,10 +1,13 @@
 #include <ar_blocks/Rectangle.h>
 #include <QPainter>
 
-Rectangle::Rectangle(qreal x, qreal y, int width, int height) : 
+namespace nxr {
+
+Rectangle::Rectangle(qreal x, qreal y, int id, int length, int width) : 
   QGraphicsItem(),
+  length_(length),
   width_(width),
-  height_(height)
+  id_(id)
 {
   setPos(x, y);
   setFlags( QGraphicsItem::ItemIsMovable |
@@ -16,5 +19,7 @@ void Rectangle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 {
   painter->setRenderHint(QPainter::Antialiasing);
   painter->setPen(QPen(Qt::black, 1));
-  painter->drawRect(-width_/2, -height_/2, width_, height_);
+  painter->drawRect(-length_/2, -width_/2, length_, width_);
 }
+
+} // namespace nxr
