@@ -1,5 +1,4 @@
 #include <ar_blocks/ARBlocksInterface.h>
-#include <ros/ros.h>
 
 namespace nxr {
 
@@ -7,7 +6,7 @@ ARBlocksInterface::ARBlocksInterface() :
   QMainWindow(),
   current_layer_number_(1),
   layer_count_(1),
-  ar_blocks_client_("ar_blocks", true)
+  ar_blocks_client_("ar_blocks_server_test", true)
 {
   center_layout_ = new QVBoxLayout;
   
@@ -17,6 +16,7 @@ ARBlocksInterface::ARBlocksInterface() :
   block_size_layout_ = new QHBoxLayout;
   block_size_label_ = new QLabel("Block Size: \t");
   block_size_input_ = new QLineEdit("6.35");
+  block_size_units_ = new QLabel("cm");
   
   left_panel_title_ = new QLabel("Layer Creator");
   current_layer_cb_ = new QComboBox;
@@ -45,9 +45,11 @@ ARBlocksInterface::ARBlocksInterface() :
   block_count_label_ = new QLabel("Block Count: \t");
   stability_label_ = new QLabel("Stability: \t");
   
-  layer_count_field_ = new QLabel;
-  block_count_field_ = new QLabel;
-  stability_field_ = new QLabel;
+  layer_count_field_ = new QLabel("1");
+  block_count_field_ = new QLabel("0");
+  layer_count_field_->setAlignment(Qt::AlignLeft);
+  block_count_field_->setAlignment(Qt::AlignLeft);
+  stability_field_ = new QLabel("0.0");
 
   build_progress_ = new QProgressBar;
   build_btn_ = new QPushButton("Send Build");
@@ -82,6 +84,7 @@ ARBlocksInterface::ARBlocksInterface() :
 
   block_size_layout_->addWidget(block_size_label_);
   block_size_layout_->addWidget(block_size_input_);
+  block_size_layout_->addWidget(block_size_units_);
  
   // RIGHT LAYOUT DISPLACEMENT 
   center_layout_->addLayout(block_size_layout_);
@@ -105,9 +108,8 @@ ARBlocksInterface::ARBlocksInterface() :
   connect(add_layer_btn_, SIGNAL(clicked()), this, SLOT(addLayerBtnHandler()));
   connect(abort_btn_, SIGNAL(clicked()), this, SLOT(abortBtnHandler()));
   connect(build_btn_, SIGNAL(clicked()), this, SLOT(buildBtnHandler()));
+  connect(current_layer_cb_, SIGNAL(activated(int)), this, SLOT(indexChangeHandler()));
   
-  connect(current_layer_cb_, SIGNAL(currentIndexChanged(int)), this, SLOT(indexChangeHandler())); 
-
   // Uncomment on release 
   // ar_blocks_client_.waitForServer();
 
@@ -115,44 +117,52 @@ ARBlocksInterface::ARBlocksInterface() :
 
   setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
   layout()->setSizeConstraint(QLayout::SetFixedSize);
-
   
+  goal_structure_.goal_structure.layers.resize(1);
+}
 
-  drawTable();
+double ARBlocksInterface::calculateStabilityMeasure()
+{
+  double s = 0.0;
+  for(int i = 1; i < goal_structure_.goal_structure.layers.size(); i++) {
+    ar_blocks::Layer& layer = goal_structure_.goal_structure.layers[i];
+    for(int j = 0; j < layer.blocks.size(); j++) {
+      // Calcuate a simple stability measure relative to bottom layer
+      // Check if block below
+      s += lowerLayerStabilityMeasure(layer.blocks[j], i-1)*i;
+    }
+  }
+  return s;
+}
 
+double ARBlocksInterface::lowerLayerStabilityMeasure(ar_blocks::Block b, int l)
+{
+  // Return 0 if the distance is less than some threshold
+  // Return 0.25 if the distance is between some range
+  // Return 1 if the distance is greater than some threshold
+  double d = 0.0;
+  for(int i = 0; i < goal_structure_.goal_structure.layers[l].blocks.size(); i++) {
+    // Compute distance
+    double c = sqrt(
+      pow(goal_structure_.goal_structure.layers[l].blocks[i].pose_stamped.pose.position.x - b.pose_stamped.pose.position.x, 2) + 
+      pow(goal_structure_.goal_structure.layers[l].blocks[i].pose_stamped.pose.position.y - b.pose_stamped.pose.position.y, 2)
+    );
+    
+    if(c < goal_structure_.goal_structure.layers[l].blocks[i].length/2)
+      return 0.0; 
+    else if(c < goal_structure_.goal_structure.layers[l].blocks[i].length)
+      d += 0.25;
+    else
+      d += 1;
+  }
+  return d;
 }
 
 void ARBlocksInterface::indexChangeHandler()
 {
+  goal_structure_.goal_structure.layers[current_layer_number_-1] = block_scene_->populateLayer();
   current_layer_number_ = current_layer_cb_->currentIndex()+1;
-  goal_structure_.goal_structure = block_scene_->blockStoreToStructure();
   redrawScene();
-}
-
-void ARBlocksInterface::drawTable()
-{
-  double x_ratio = (scene_width - 20.0)/ table_dim_x;
-  double y_ratio = (scene_height - 20.0)/ table_dim_y;
-  double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio; 
-  
-  block_scene_->addRect(0.0, scene_height/5, ratio*table_dim_x, ratio*table_dim_y, QPen(Qt::red));
-}
-
-void ARBlocksInterface::drawScene()
-{
-  
-}
-
-void ARBlocksInterface::drawLayer(ar_blocks::Layer layer, QPen pen, QBrush brush)
-{
-  for(int i = 0; i < layer.blocks.size(); i++) {
-    // Use the block's 2D projection onto the table
-    double num_pixels_y = ratio * layer.blocks[i].width;
-    double num_pixels_x = ratio * layer.blocks[i].length;
-    // ROS conventions flip the x and y dimensions due to the z axis being out of the plane
-    
-    block_scene_->addRect(-layer.blocks[i].pose_stamped.pose.position.y, layer.blocks[i].pose_stamped.pose.position.x, num_pixels_x, num_pixels_y, pen, brush);
-  }
 }
 
 void ARBlocksInterface::drawStaticLayer(int layer_number)
@@ -161,30 +171,41 @@ void ARBlocksInterface::drawStaticLayer(int layer_number)
     std::vector<ar_blocks::Block> &blocks = goal_structure_.goal_structure.layers[layer_number-1].blocks;
     
     for(int i = 0; i < goal_structure_.goal_structure.layers[layer_number-1].blocks.size(); i++) {
-      /*block_scene_->addRect(
-        blocks[i].pose_stamped.pose.position.x + (table_dim_x*ratio/2),
-        int((table_dim_y*ratio/2) - blocks[i].pose_stamped.pose.position.y), 
+      
+      block_scene_->addRect(
+        blocks[i].pose_stamped.pose.position.x - (blocks[i].length/2),
+        blocks[i].pose_stamped.pose.position.y - (blocks[i].width/2), 
         blocks[i].length, 
         blocks[i].width, 
         QPen(Qt::gray)
-      );*/
+      );
     }
     
   }
 }
 
-void ARBlocksInterface::drawDynamicLayer(int layer_number)
-{
-
-}
-
 void ARBlocksInterface::redrawScene()
 {
   block_scene_->clear();  
-  drawTable();
   if(current_layer_number_ > 1) {
     drawStaticLayer(current_layer_number_-1);
   }
+  block_scene_->drawLayer(goal_structure_.goal_structure.layers[current_layer_number_-1]);  
+  
+  // Update the block and layer counts
+  std::stringstream ss_layer, ss_block, ss_stability;
+  ss_layer << layer_count_;
+  layer_count_field_->setText(ss_layer.str().c_str());
+  
+  int bcount = 0;
+  for(int i = 0; i < goal_structure_.goal_structure.layers.size(); i++)
+    bcount += goal_structure_.goal_structure.layers[i].blocks.size();
+  ss_block << bcount;
+  block_count_field_->setText(ss_block.str().c_str());
+  
+  double stability_measure = calculateStabilityMeasure();
+  ss_stability << stability_measure;
+  stability_field_->setText(ss_stability.str().c_str());
 }
 
 void ARBlocksInterface::previousLayerBtnHandler()
@@ -193,6 +214,7 @@ void ARBlocksInterface::previousLayerBtnHandler()
     statusBar()->showMessage("Reached the bottom layer.");
   }
   else {
+    goal_structure_.goal_structure.layers[current_layer_number_-1] = block_scene_->populateLayer();
     current_layer_number_--;
     current_layer_cb_->setCurrentIndex(current_layer_number_-1);
     redrawScene();
@@ -206,6 +228,7 @@ void ARBlocksInterface::nextLayerBtnHandler()
     statusBar()->showMessage("Reached the top layer.");
   }
   else {
+    goal_structure_.goal_structure.layers[current_layer_number_-1] = block_scene_->populateLayer();
     current_layer_number_++;
     current_layer_cb_->setCurrentIndex(current_layer_number_-1);
     redrawScene();
@@ -221,13 +244,14 @@ void ARBlocksInterface::removeLayerBtnHandler()
   else if(current_layer_number_ == 1) {
     statusBar()->showMessage("Cleared initial layer.");
     block_scene_->clear();
-    // redrawScene();
+    redrawScene();
   }
   else {
     block_scene_->clear();
-    block_scene_->block_store_.pop_back();
     layer_count_--;
     current_layer_number_--;
+    goal_structure_.goal_structure.layers.resize(layer_count_);
+    
     current_layer_cb_->setCurrentIndex(layer_count_-1);
     current_layer_cb_->removeItem(layer_count_);
     redrawScene(); 
@@ -241,9 +265,11 @@ void ARBlocksInterface::addLayerBtnHandler()
     statusBar()->showMessage("Can only add to the top layer.");
   }
   else {
-    block_scene_->block_store_.push_back( std::vector<nxr::Rectangle*>() );
+    goal_structure_.goal_structure.layers[current_layer_number_-1] = block_scene_->populateLayer();
     layer_count_++;
     current_layer_number_++;
+    goal_structure_.goal_structure.layers.resize(layer_count_);
+
     std::stringstream ss;
     ss << layer_count_;
     current_layer_cb_->addItem(ss.str().c_str());
@@ -265,7 +291,26 @@ void ARBlocksInterface::abortBtnHandler()
 
 void ARBlocksInterface::buildBtnHandler()
 {
-  ar_blocks_client_.sendGoal( goal_structure_,
+  // Final update
+  goal_structure_.goal_structure.layers[current_layer_number_-1] = block_scene_->populateLayer();
+  
+  // Prepare the final goal for build
+  ar_blocks::BuildStructureGoal gpub = goal_structure_;
+  gpub.goal_structure.header.frame_id = "/base";
+  gpub.goal_structure.header.stamp = ros::Time::now();
+  for(int i = 0; i < gpub.goal_structure.layers.size(); i++) {
+    ar_blocks::Layer& layer = gpub.goal_structure.layers[i];
+    for(int j = 0; j < gpub.goal_structure.layers[i].blocks.size(); j++) {
+      layer.blocks[j].pose_stamped.header.stamp = ros::Time::now();
+      layer.blocks[j].pose_stamped.pose.position.x /= ratio;
+      layer.blocks[j].pose_stamped.pose.position.y /= -ratio;
+      layer.blocks[j].pose_stamped.pose.position.y += table_dim_y;
+    }
+  }
+  
+  // Convert the block locations to be relative to the table
+  
+  ar_blocks_client_.sendGoal( gpub,
                               boost::bind(&ARBlocksInterface::arBlocksDoneCallback, this, _1, _2),
                               boost::bind(&ARBlocksInterface::arBlocksActiveCallback, this),
                               boost::bind(&ARBlocksInterface::arBlocksFeedbackCallback, this, _1) );

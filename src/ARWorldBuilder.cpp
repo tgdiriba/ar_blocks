@@ -79,35 +79,7 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
 	ar_blocks_action_server_.start();
-
-	// Further Tests
-	/*geometry_msgs::Pose tpose;
-	tpose.position.x = 1.0;
-	tpose.position.y = 1.0;
-	tpose.position.z = 1.0;
-	tpose.orientation.w = 1.0;*/
 	
-	geometry_msgs::Pose b6pose;
-	b6pose.position.x = 0.622832;
-	b6pose.position.y = 0.287662;
-	b6pose.position.z = -0.264523;
-	b6pose.orientation.x = 0.706081;
-	b6pose.orientation.y = 0.112389;
-	b6pose.orientation.z = 0.695385;
-	b6pose.orientation.w = -0.0725117;
-	
-	geometry_msgs::Pose b14pose;
-	b14pose.position.x = 0.636082;
-	b14pose.position.y = 0.367458;
-	b14pose.position.z = -0.276704;
-	b14pose.orientation.x = 0.478385;
-	b14pose.orientation.y = 0.524679;
-	b14pose.orientation.z = 0.517999;
-	b14pose.orientation.w = 0.477007;
-	
-	// visual_tools_->publishCollisionBlock( tpose, "1000", 0.0635 );
-	visual_tools_->publishCollisionBlock( b6pose, "6", 0.0635 );
-	visual_tools_->publishCollisionBlock( b14pose, "14", 0.0635 );
 }
 
 ARWorldBuilder::~ARWorldBuilder()
@@ -147,7 +119,6 @@ void ARWorldBuilder::scanEnvironment()
   p1.orientation.y = 0.01;
   p1.orientation.z = 0.025;
   p1.orientation.w = -0.0133;
-  points.push_back(p1);
 
   geometry_msgs::Pose p2;
   p2.position.x = 0.565;
@@ -157,7 +128,6 @@ void ARWorldBuilder::scanEnvironment()
   p2.orientation.y = 0.055;
   p2.orientation.z = 0.037;
   p2.orientation.w = 0.0469;
-  points.push_back(p2);
   
   geometry_msgs::Pose p3;
   p3.position.x = 0.6834;
@@ -167,52 +137,17 @@ void ARWorldBuilder::scanEnvironment()
   p3.orientation.y = -0.0999;
   p3.orientation.z = 0.0512;
   p3.orientation.w = 0.0117;
-  points.push_back(p3);
   
-  geometry_msgs::Pose p4;
-  p3.position.x = 0.6730;
-  p3.position.y = -0.1514;
-  p3.position.z = 0.44046;
-  p3.orientation.x = 0.9361;
-  p3.orientation.y = -0.3487;
-  p3.orientation.z = -0.008559;
-  p3.orientation.w = 0.04464;
-  points.push_back(p3);
-  
-  geometry_msgs::Pose p5;
-  p3.position.x = 0.6834;
-  p3.position.y = 0.2276;
-  p3.position.z = 0.627;
-  p3.orientation.x = 1.0;
-  p3.orientation.y = -0.0999;
-  p3.orientation.z = 0.0512;
-  p3.orientation.w = 0.0117;
-  points.push_back(p3);
-
-  geometry_msgs::Pose p6;
-  p2.position.x = 0.565;
-  p2.position.y = 0.5523;
-  p2.position.z = 0.410;
-  p2.orientation.x = 0.996;
-  p2.orientation.y = 0.055;
-  p2.orientation.z = 0.037;
-  p2.orientation.w = 0.0469;
-  points.push_back(p2);
-  
-  geometry_msgs::Pose p7;
-  p1.position.x = 0.098;
-  p1.position.y = 0.7;
-  p1.position.z = 0.011;
-  p1.orientation.x = 1.0;
-  p1.orientation.y = 0.01;
-  p1.orientation.z = 0.025;
-  p1.orientation.w = -0.0133;
   points.push_back(p1);
-
+  points.push_back(p2);
+  points.push_back(p3);
+  points.push_back(p2);
+  points.push_back(p1);
+  
   moveit_msgs::RobotTrajectory rt;
   double fraction = left_arm_.computeCartesianPath(points, 0.01, 0.0, rt);
   left_arm_.move();
-
+  
 }
 
 void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
@@ -232,7 +167,7 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->F,0,3,1);
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->F,1,4,1);
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->F,2,5,1);
-
+  
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,0,0,0.0001);
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,1,1,0.0001);
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,2,2,0.0001);
@@ -241,7 +176,7 @@ void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
 	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,5,5,0.00001);
 	
 	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second->P,cvScalar(100));
-
+  
 	// Setup the pose's orientational filter
 	
 }
@@ -298,21 +233,7 @@ bool ARWorldBuilder::inFreeZone(ARBlock block)
   return false;
 }
 
-bool ARWorldBuilder::pointInRectangle(Rectangle r, Point p)
-{
-  return (p.x >= r.point.x) && (p.y > r.point.y) &&
-         (p.x <= r.point.x + r.area.length) && (p.y <= r.point.y + r.area.width);
-}
-
-bool ARWorldBuilder::pointInRectangle(Rectangle r, vector<Point> pv)
-{
-  for(int i = 0; i < pv.size(); i++) {
-    if(pointInRectangle(r, pv[i])) return true;
-  }
-  return false;
-}
-
-bool ARWorldBuilder::isAreaClear(Rectangle r)
+bool ARWorldBuilder::isAreaClear(Rect r)
 {
   map<unsigned int, ARBlock>::iterator it = ar_blocks_.begin();
   map<unsigned int, ARBlock>::iterator end = ar_blocks_.end();
@@ -348,7 +269,7 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
     points.push_back(bl);
     points.push_back(br);
     
-    // Define a Rectangle that is aligned with the y axis that inscribes the shape (bounding box)
+    // Define a Rect that is aligned with the y axis that inscribes the shape (bounding box)
     // Simplifies calculations
     Point top_left_point;
     Area r_area;
@@ -356,9 +277,9 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
     r_area.width = (tr.y - bl.y)/2;
     top_left_point.x = it->second.pose_.position.x - r_area.length;
     top_left_point.y = it->second.pose_.position.y + r_area.width;
-    Rectangle inscribed = { top_left_point, r_area };
+    Rect inscribed = { top_left_point, r_area };
 
-    // Generate rectangle's poins
+    // Generate rectangle's points
     vector<Point> area_points;
     Point bb_tl = { r.point.x + r.area.length/2, r.point.y - r.area.width/2 };
     Point bb_tr = { r.point.x + r.area.length/2, r.point.y + r.area.width/2 };
@@ -369,8 +290,8 @@ bool ARWorldBuilder::isAreaClear(Rectangle r)
     area_points.push_back( bb_bl );
     area_points.push_back( bb_br );
     
-    if(pointInRectangle(r, points)) return false;
-    if(pointInRectangle(inscribed, area_points)) return false;
+    if(pointInRect(r, points)) return false;
+    if(pointInRect(inscribed, area_points)) return false;
     
   }
   
@@ -392,7 +313,7 @@ vector<moveit_msgs::PlaceLocation> ARWorldBuilder::findFreeLocations()
     for( int x = 0; x < num_partitions_x; x++ ) {
       for( int y = 0; y < num_partitions_y; y++ ) {
         
-        Rectangle place;
+        Rect place;
         place.point.x = num_partitions*(block_size_+tolerance) + table_freezone_.point.x;
         place.point.y = num_partitions*(block_size_+tolerance) + table_freezone_.point.y;
         place.area.length = block_size_+tolerance;

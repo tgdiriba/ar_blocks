@@ -150,6 +150,7 @@ add_definitions(${QT_DEFINITIONS})
 add_library(ar_blocks
 	src/ARBlock.cpp
 	src/ARWorldBuilder.cpp
+  src/Geometry.cpp
 )
 target_link_libraries(ar_blocks 
 	${catkin_LIBRARIES}
@@ -187,6 +188,7 @@ add_executable(ar_blocks_interface nodes/ar_blocks_interface.cpp
   src/ARBlocksInterface.cpp
   src/Rectangle.cpp
   src/Scene.cpp
+  src/Geometry.cpp
   ${ar_blocks_interface_HEADERS_MOC}
 )
 target_link_libraries(ar_blocks_interface

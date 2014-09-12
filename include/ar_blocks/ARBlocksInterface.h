@@ -5,19 +5,12 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <map>
+#include <cmath>
 #include <ar_blocks/Scene.h>
 #include <ar_blocks/Rectangle.h>
 #include <ar_blocks/BuildStructureAction.h>
 
 namespace nxr {
-
-/*static int scene_width = 630;
-static int scene_height = 500;
-static double table_dim_x = 121.602; 
-static double table_dim_y = 60.8012;
-static double x_ratio = scene_width/table_dim_x;
-static double y_ratio = scene_height/table_dim_y;
-static double ratio = (x_ratio < y_ratio) ? x_ratio : y_ratio;*/
 
 class ARBlocksInterface : public QMainWindow
 {
@@ -47,6 +40,7 @@ private:
   
   QLabel *block_size_label_;
   QLineEdit *block_size_input_;
+  QLabel *block_size_units_;
   
   QLabel *layer_count_label_;
   QLabel *block_count_label_;
@@ -88,11 +82,12 @@ private:
 
   void drawStaticLayer(int layer_number);
   void drawDynamicLayer(int layer_number);
+  
+  double calculateStabilityMeasure();
+  double lowerLayerStabilityMeasure(ar_blocks::Block, int l);
  
   void drawTable(); 
   void redrawScene();
-  void drawScene();
-  void drawLayer(ar_blocks::Layer layer, QPen pen = QPen(Qt::black), QBrush brush = Qt::NoBrush);
   
   int current_layer_number_;
   int layer_count_;

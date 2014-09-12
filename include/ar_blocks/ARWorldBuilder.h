@@ -38,6 +38,7 @@
 #include <sstream>
 #include <pthread.h>
 #include <ar_blocks/ARBlock.h>
+#include <ar_blocks/Geometry.h>
 #include <ar_blocks/BuildStructureAction.h>
 
 namespace nxr {
@@ -45,27 +46,6 @@ namespace nxr {
 typedef unsigned long long ull;
 typedef boost::shared_ptr<alvar::KalmanSensor> KalmanSensorPtr;
 typedef boost::shared_ptr<alvar::Kalman> KalmanPtr;
-
-struct Table {
-  double length;
-  double width;
-  double height;
-};
-
-struct Area {
-  double length;
-  double width;
-};
-
-struct Point {
-  double x;
-  double y;
-};
-
-struct Rectangle {
-  Point point;
-  Area area;
-};
 
 class ARWorldBuilder {
 public:
@@ -91,19 +71,17 @@ public:
 	std::map<unsigned int,ARBlock> ar_blocks_;
 
   // Table Properties.
-  Table table_dimensions_;
+  Prism table_dimensions_;
   boost::mutex table_pose_mutex_;
   geometry_msgs::Pose table_pose_;  
-  Rectangle table_freezone_;
+  Rect table_freezone_;
   
   // Block Handling
   bool inFreeZone(ARBlock);
   bool clearStage();
   bool pickBlock(ARBlock &block, bool left_side);
   bool pickFreeBlock(bool left_side);
-  bool isAreaClear(Rectangle r);
-  bool pointInRectangle(Rectangle r, Point p);
-  bool pointInRectangle(Rectangle r, std::vector<Point> pv);
+  bool isAreaClear(Rect r);
   std::vector<moveit_msgs::PlaceLocation> findFreeLocations();
 
   // Action Handling
