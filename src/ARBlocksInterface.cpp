@@ -6,7 +6,7 @@ ARBlocksInterface::ARBlocksInterface() :
   QMainWindow(),
   current_layer_number_(1),
   layer_count_(1),
-  ar_blocks_client_("ar_blocks_server_test", true)
+  ar_blocks_client_("ar_blocks_action_server", true)
 {
   center_layout_ = new QVBoxLayout;
   
@@ -15,8 +15,7 @@ ARBlocksInterface::ARBlocksInterface() :
   
   block_size_layout_ = new QHBoxLayout;
   block_size_label_ = new QLabel("Block Size: \t");
-  block_size_input_ = new QLineEdit("6.35");
-  block_size_units_ = new QLabel("cm");
+  block_size_value_ = new QLabel("6.35 cm");
   
   left_panel_title_ = new QLabel("Layer Creator");
   current_layer_cb_ = new QComboBox;
@@ -83,8 +82,7 @@ ARBlocksInterface::ARBlocksInterface() :
   center_layout_->addLayout(viz2d_tools_);
 
   block_size_layout_->addWidget(block_size_label_);
-  block_size_layout_->addWidget(block_size_input_);
-  block_size_layout_->addWidget(block_size_units_);
+  block_size_layout_->addWidget(block_size_value_);
  
   // RIGHT LAYOUT DISPLACEMENT 
   center_layout_->addLayout(block_size_layout_);
@@ -190,7 +188,7 @@ void ARBlocksInterface::redrawScene()
   if(current_layer_number_ > 1) {
     drawStaticLayer(current_layer_number_-1);
   }
-  block_scene_->drawLayer(goal_structure_.goal_structure.layers[current_layer_number_-1]);  
+  block_scene_->drawLayer(goal_structure_.goal_structure.layers[current_layer_number_-1]);
   
   // Update the block and layer counts
   std::stringstream ss_layer, ss_block, ss_stability;

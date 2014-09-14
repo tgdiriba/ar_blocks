@@ -39,8 +39,7 @@ private:
   QLabel *current_layer_;
   
   QLabel *block_size_label_;
-  QLineEdit *block_size_input_;
-  QLabel *block_size_units_;
+  QLabel *block_size_value_;
   
   QLabel *layer_count_label_;
   QLabel *block_count_label_;
@@ -60,7 +59,7 @@ private:
   QProgressBar *build_progress_;
   
   Scene *block_scene_;
-
+  
   // ROS
   ros::NodeHandle nh_;
   Client ar_blocks_client_;
