@@ -78,8 +78,21 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	threads_.push_back(tg_.create_thread( boost::bind(&ARWorldBuilder::updateThread, this) ));
 	
 	ar_pose_marker_sub_ = nh_.subscribe("ar_pose_marker", 60, &ARWorldBuilder::arPoseMarkerCallback, this);
-	ar_blocks_action_server_.start();
 	
+  // Perform the initial scan
+  scanEnvironment();
+  if(validEnvironment()) {
+    ROS_INFO("Starting up the ar_blocks action server...");
+    ar_blocks_action_server_.start();
+  }
+  else {
+    ROS_ERROR("Invalid environment encountered. Expecting a table positioned withing grasp distance.");
+  }
+}
+
+bool ARWorldBuilder::validEnvironment()
+{
+  return true;  
 }
 
 ARWorldBuilder::~ARWorldBuilder()
@@ -148,52 +161,6 @@ void ARWorldBuilder::scanEnvironment()
   double fraction = left_arm_.computeCartesianPath(points, 0.01, 0.0, rt);
   left_arm_.move();
   
-}
-
-void ARWorldBuilder::addBaseKalmanFilter(unsigned int block_id)
-{
-	// Setup the pose's positional filter
-	ar_blocks_filtered_.insert(pair<unsigned int, KalmanSensorPtr>(block_id, KalmanSensorPtr(new KalmanSensor(6,3)) ));
-	ar_blocks_kalman_.insert(pair<unsigned int, KalmanPtr>(block_id, KalmanPtr(new Kalman(6)) ));
-	
-	cvZero(ar_blocks_filtered_.find(block_id)->second->H);
-	cvmSet(ar_blocks_filtered_.find(block_id)->second->H,0,0,1);
-	cvmSet(ar_blocks_filtered_.find(block_id)->second->H,1,1,1);
-	cvmSet(ar_blocks_filtered_.find(block_id)->second->H,2,2,1);
-	
-	cvSetIdentity(ar_blocks_filtered_.find(block_id)->second->R,cvScalar(10));
-	
-	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second->F);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->F,0,3,1);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->F,1,4,1);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->F,2,5,1);
-  
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,0,0,0.0001);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,1,1,0.0001);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,2,2,0.0001);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,3,3,0.00001);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,4,4,0.00001);
-	cvmSet(ar_blocks_kalman_.find(block_id)->second->Q,5,5,0.00001);
-	
-	cvSetIdentity(ar_blocks_kalman_.find(block_id)->second->P,cvScalar(100));
-  
-	// Setup the pose's orientational filter
-	
-}
-
-void ARWorldBuilder::filterBlocks()
-{
-	map<unsigned int, shared_ptr<Kalman> >::iterator it = ar_blocks_kalman_.begin();
-	map<unsigned int, shared_ptr<Kalman> >::iterator end = ar_blocks_kalman_.end();	
-	
-	for( ; it != end; it++ ) {
-		cvmSet(ar_blocks_filtered_.find(it->first)->second->z,0,0,ar_blocks_.find(it->first)->second.pose_.position.x);
-		cvmSet(ar_blocks_filtered_.find(it->first)->second->z,1,0,ar_blocks_.find(it->first)->second.pose_.position.y);
-		cvmSet(ar_blocks_filtered_.find(it->first)->second->z,2,0,ar_blocks_.find(it->first)->second.pose_.position.z);
-		
-		// Modify the time stamps and perform predict and update
-		ar_blocks_kalman_.find(it->first)->second->predict_update(ar_blocks_filtered_.find(it->first)->second.get(), ar_blocks_timestamps_[it->first].second - ar_blocks_timestamps_[it->first].first);
-	}
 }
 
 bool ARWorldBuilder::createOrderedStack()
@@ -560,26 +527,26 @@ void ARWorldBuilder::arPoseMarkerCallback(const ar_track_alvar::AlvarMarkers::Co
 				table_pose_.position.y = markers_msg->markers[i].pose.pose.position.y - (g_table_dimensions[1]/2) + 2.2;
 				table_pose_.position.z = markers_msg->markers[i].pose.pose.position.z;
 				table_pose_.orientation = markers_msg->markers[i].pose.pose.orientation;
+
+        table_freezone_.point.x = table_pose_.position.x - (g_table_dimensions[0]/2);
+        table_freezone_.point.y = table_pose_.position.y + (g_table_dimensions[1]/2);
+
 				table_pose_mutex_.unlock();
 			}
 			else {
 				if(ar_blocks_.find(block_id) == ar_blocks_.end()) {
 					ar_blocks_[ block_id ].id_ = markers_msg->markers[i].id;
-					ar_blocks_timestamps_[ block_id ] = pair<ull, ull>(ros::Time::now().toNSec(), ros::Time::now().toNSec());
-					addBaseKalmanFilter(block_id);
+          
+          // KF Setup
+          ar_blocks_[ block_id ].filter_.reset( markers_msg->markers[i].pose.pose );
 				}
-				
-	      ar_blocks_[ block_id ].time_stamp_ = ros::Time::now();
-				ar_blocks_[ block_id ].pose_ = markers_msg->markers[i].pose.pose;
-				ar_blocks_timestamps_[ block_id ].first = ar_blocks_timestamps_[ block_id ].second;
-				ar_blocks_timestamps_[ block_id ].second = ros::Time::now().toNSec();
-				// ar_blocks_[ block_id ].printInfo();
+        else {
+          // KF Update
+          ar_blocks_[ block_id ].filter_.update( markers_msg->markers[i].pose.pose );
+        }
 			}
 		}
 	}
-	
-	// Perform Kalman Filtering
-	// filterBlocks();
 	
 	ar_blocks_mutex_.unlock();
 }

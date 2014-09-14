@@ -149,6 +149,7 @@ add_definitions(${QT_DEFINITIONS})
 
 add_library(ar_blocks
 	src/ARBlock.cpp
+  src/ARBlockFilter.cpp
 	src/ARWorldBuilder.cpp
   src/Geometry.cpp
 )

@@ -4,32 +4,19 @@ namespace nxr {
 
 static const float g_block_sizes[BLOCK_NUM] = { 0.0635, 0.051, 0.045 };
 
-ARBlock::ARBlock(unsigned int b_type) : block_type_(b_type)
+ARBlock::ARBlock(unsigned int b_type) : 
+  block_type_(b_type)
 {
 	// POSE DEFAULT VALUES ARE ALL ZERO
 	pose_.orientation.w = 1.0;
-
+  
 	// Designate the block type
 	if(block_type_ < BLOCK_NUM) 
 		dimensions_.x = dimensions_.y = dimensions_.z = g_block_sizes[block_type_];
 }
 
-ARBlock::ARBlock(unsigned int id, const boost::shared_ptr<alvar::Kalman> &k) 
-	: block_type_(BLOCK_A),
-	  id_(id)
-{
-	// POSE DEFAULT VALUES ARE ALL ZERO
-	pose_.position.x = cvmGet(k->x,0,0);
-	pose_.position.y = cvmGet(k->x,1,0);
-	pose_.position.z = cvmGet(k->x,2,0);
-	pose_.orientation.x = 0.0;
-	pose_.orientation.y = 0.0;
-	pose_.orientation.z = 0.0;
-	pose_.orientation.w = 1.0;
-	
-}
-
-ARBlock::ARBlock(float *dims, int id) : id_(id)
+ARBlock::ARBlock(float *dims, int id) : 
+  id_(id)
 {
 	dimensions_.x = dims[0];
 	dimensions_.y = dims[1];
@@ -92,11 +79,6 @@ ar_blocks::Block ARBlock::toBlockMsg()
   t.pose_stamped.header.frame_id = std::string("/base");
   t.pose_stamped.pose = pose_;
   return t;
-}
-
-alvar::Kalman toKalman()
-{
-	return alvar::Kalman(4);
 }
 
 moveit_msgs::CollisionObject ARBlock::toCollisionObject(std::string planning_frame)

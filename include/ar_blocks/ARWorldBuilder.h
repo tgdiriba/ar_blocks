@@ -38,6 +38,7 @@
 #include <sstream>
 #include <pthread.h>
 #include <ar_blocks/ARBlock.h>
+#include <ar_blocks/ARBlockFilter.h>
 #include <ar_blocks/Geometry.h>
 #include <ar_blocks/BuildStructureAction.h>
 
@@ -82,6 +83,7 @@ public:
   bool pickBlock(ARBlock &block, bool left_side);
   bool pickFreeBlock(bool left_side);
   bool isAreaClear(Rect r);
+  bool validEnvironment();
   std::vector<moveit_msgs::PlaceLocation> findFreeLocations();
 
   // Action Handling
@@ -92,10 +94,6 @@ public:
   void actionServerCallback(const ar_blocks::BuildStructureGoalConstPtr &goal);
 
 	// Filters
-	std::map< unsigned int, boost::shared_ptr<alvar::KalmanSensor> > ar_blocks_filtered_;
-	std::map< unsigned int, boost::shared_ptr<alvar::Kalman> > ar_blocks_kalman_;
-	std::map<unsigned int, std::pair<ull, ull> > ar_blocks_timestamps_;
-	void addBaseKalmanFilter(unsigned int);
 	void filterBlocks();
 	
 	unsigned int cutoff_confidence_;

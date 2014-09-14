@@ -12,6 +12,7 @@
 #include <string>
 #include <cmath>
 #include <ar_blocks/Block.h>
+#include <ar_blocks/ARBlockFilter.h>
 
 namespace nxr {
 
@@ -36,10 +37,10 @@ public:
 	ARBlock(float *dims, int id = 0);	
 	int topSide();
 	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("base"));	
-	alvar::Kalman toKalman();
   ar_blocks::Block toBlockMsg();
 	std::string getStringId();
   
+  ARBlockFilter filter_;
 	geometry_msgs::Pose pose_;
   ros::Time time_stamp_;
 	unsigned int block_type_; 
