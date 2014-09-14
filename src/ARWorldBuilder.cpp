@@ -32,6 +32,9 @@ ARWorldBuilder::ARWorldBuilder(unsigned int cutoff) :
 	ROS_INFO("Configuring moveit grasp generation and visualization...");
 
 	planning_scene_monitor_.reset( new planning_scene_monitor::PlanningSceneMonitor("robot_description") );
+  
+  trajectory_em_.reset( new trajectory_execution_manager::TrajectoryExecutionManager( planning_scene_monitor_->getRobotModel() ) );
+  plan_execution_.reset( new plan_execution::PlanExecution( planning_scene_monitor_, trajectory_em_ ) );
 
 	visual_tools_.reset( new moveit_visual_tools::VisualTools( "base" ) );
 	visual_tools_->setLifetime(10);
@@ -116,7 +119,7 @@ void ARWorldBuilder::printInfo()
 	}	
 }
 
-void ARWorldBuilder::scanEnvironment()
+bool ARWorldBuilder::scanEnvironment()
 {
   // Clear the block memory
   ar_blocks_mutex_.lock();
@@ -159,7 +162,23 @@ void ARWorldBuilder::scanEnvironment()
   
   moveit_msgs::RobotTrajectory rt;
   double fraction = left_arm_.computeCartesianPath(points, 0.01, 0.0, rt);
-  left_arm_.move();
+  
+  plan_execution_->getTrajectoryExecutionManager()->clear();
+  if(plan_execution_->getTrajectoryExecutionManager()->push(rt)) {
+    plan_execution_->getTrajectoryExecutionManager()->execute();
+    if(plan_execution_->getTrajectoryExecutionManager()->waitForExecution() == moveit_controller_manager::ExecutionStatus::SUCCEEDED) {
+      ROS_INFO("Successfully scanned the environment.");
+      return true;
+    }
+    else {
+      ROS_ERROR("Trajectory execution failed.");
+      return false;
+    }
+  }
+  else {
+    ROS_ERROR("Failed to push the trajectory through the computed cartesian path.");
+    return false;
+  }
   
 }
 
@@ -259,9 +278,7 @@ bool ARWorldBuilder::isAreaClear(Rect r)
     
     if(pointInRect(r, points)) return false;
     if(pointInRect(inscribed, area_points)) return false;
-    
   }
-  
   return true;
 }
 
@@ -577,19 +594,8 @@ void ARWorldBuilder::updateWorld()
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	
 
 	for( ; it != end; it++ ) {
-		// Ignore filtering for now
-		/*if(ar_blocks_kalman_.find(it->first) != ar_blocks_kalman_.end()) {
-			ARBlock block(it->first, ar_blocks_kalman_[it->first]);
-			// Ignore the orientation kalman filter for now
-			block.pose_.orientation = ar_blocks_.find(it->first)->second.pose_.orientation;
-			visual_tools_->publishCollisionBlock( block.pose_, block.getStringId(), block.dimensions_.x );
-		}
-		else {	
-			// collision_object_pub_.publish( it->second.toCollisionObject() );
-			visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
-		}*/
-		// Block Info
-		visual_tools_->publishCollisionBlock( it->second.pose_, it->second.getStringId(), it->second.dimensions_.x );
+    // Using KF
+		visual_tools_->publishCollisionBlock( it->second.filter_.predicted_pose_, it->second.getStringId(), it->second.dimensions_.x );
 	 	it->second.printInfo();
 	}
 }

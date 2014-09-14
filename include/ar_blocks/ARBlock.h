@@ -35,6 +35,7 @@ public:
 	ARBlock(unsigned int b_type = BLOCK_A);
 	ARBlock(unsigned int id, const boost::shared_ptr<alvar::Kalman> &k);
 	ARBlock(float *dims, int id = 0);	
+  
 	int topSide();
 	moveit_msgs::CollisionObject toCollisionObject(std::string planning_frame = std::string("base"));	
   ar_blocks::Block toBlockMsg();

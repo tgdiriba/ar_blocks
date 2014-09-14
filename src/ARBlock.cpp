@@ -53,19 +53,29 @@ int ARBlock::topSide()
                     pose_.orientation.y,
                     pose_.orientation.z,
                     pose_.orientation.w );
-  double roll, pitch, yaw;
-  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
   
-  // Figure out the ranges. Easier to use quaternion?
-  return 0;
- 
-  /* Estimate which side of the block is upward face 
-  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
-  if(roll <= -M_PI/4 && roll > -3*M_PI/4 && yaw <= M_PI/4 && yaw > -M_PI/4) return 1;
-  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
-  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
-  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;
-  if(roll <= M_PI/4 && roll > -M_PI/4 && pitch <= M_PI/4 && pitch > -M_PI/4) return 0;*/
+  // Define a quaternion for each direction using YPR
+  tf::Quaternion side_0(0.0, 0.0, 0.0);
+  tf::Quaternion side_1(0.0, 0.0, 90.0);
+  tf::Quaternion side_2(0.0, 0.0, 180.0);
+  tf::Quaternion side_3(0.0, 0.0, 270.0);
+  tf::Quaternion side_4(90.0, 0.0, 270.0);
+  tf::Quaternion side_5(270.0, 0.0, 0.0);
+  
+  if(q.angleShortestPath(side_0) < 1.5) 
+    return 0;
+  else if(q.angleShortestPath(side_1) < 1.5) 
+    return 1;
+  else if(q.angleShortestPath(side_2) < 1.5)
+    return 2;
+  else if(q.angleShortestPath(side_3) < 1.5)
+    return 3; 
+  else if(q.angleShortestPath(side_4) < 1.5)
+    return 4;
+  else if(q.angleShortestPath(side_5) < 1.5)
+    return 5;
+  else
+    return -1;
 }
 
 ar_blocks::Block ARBlock::toBlockMsg()

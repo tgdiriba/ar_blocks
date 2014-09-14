@@ -5,6 +5,9 @@
 #include <ros/console.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/move_group_interface/move_group.h>
+#include <moveit/trajectory_execution_manager/trajectory_execution_manager.h>
+#include <moveit/plan_execution/plan_execution.h>
+#include <moveit/controller_manager/controller_manager.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit_msgs/PlanningSceneComponents.h>
@@ -64,7 +67,7 @@ public:
 	std::deque<boost::thread*> threads_;
 	boost::mutex ar_blocks_mutex_;
   
-  void scanEnvironment();
+  bool scanEnvironment();
 	
 	ros::NodeHandle nh_;
 	ros::Publisher collision_object_pub_;
@@ -92,9 +95,6 @@ public:
   ar_blocks::BuildStructureFeedback ar_blocks_feedback_;
   ar_blocks::BuildStructureResult ar_blocks_result_;
   void actionServerCallback(const ar_blocks::BuildStructureGoalConstPtr &goal);
-
-	// Filters
-	void filterBlocks();
 	
 	unsigned int cutoff_confidence_;
   double block_size_;
@@ -102,6 +102,8 @@ public:
 	// MoveIt!
 	move_group_interface::MoveGroup left_arm_;
 	move_group_interface::MoveGroup right_arm_;
+  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_em_;
+  plan_execution::PlanExecutionPtr plan_execution_;
 	
 	// MoveIt! Simple Grasps and Visual Tools
 	planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
