@@ -238,6 +238,8 @@ bool ARWorldBuilder::isAreaClear(Rect r)
     tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
     
     // Assuming that yaw is the correct rotation angle. Needs to be fixed...
+    int top_side = it->second.topSide();
+     
     double r_angle = yaw;
     double init_angle = atan(it->second.dimensions_.y / it->second.dimensions_.x);
     Point tl = {it->second.pose_.position.x + cos(init_angle+yaw),
@@ -586,9 +588,6 @@ void ARWorldBuilder::setupCageEnvironment()
 void ARWorldBuilder::updateWorld()
 {
 	boost::mutex::scoped_lock l(ar_blocks_mutex_);
-	
-	// map<unsigned int,Kalman>::iterator it = ar_blocks_kalman_.begin();
-	// map<unsigned int,Kalman>::iterator end = ar_blocks_kalman_.end();	
 	
 	map<unsigned int,ARBlock>::iterator it = ar_blocks_.begin();
 	map<unsigned int,ARBlock>::iterator end = ar_blocks_.end();	

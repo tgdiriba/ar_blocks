@@ -3,9 +3,10 @@
 
 #include <opencv2/video/tracking.hpp>
 #include <geometry_msgs/Pose.h>
+#include <tf/transform_datatypes.h>
 
 namespace nxr {
-  
+ 
 class ARBlockFilter {
 public:
   ARBlockFilter(geometry_msgs::Pose p = geometry_msgs::Pose());
@@ -19,7 +20,7 @@ public:
   
   ros::Time current_time_;
 };
-  
+
 } // namespace nxr
 
 #endif // ARBLOCKFILTER_H

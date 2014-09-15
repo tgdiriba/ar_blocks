@@ -90,17 +90,25 @@ void ARBlockFilter::update(geometry_msgs::Pose p, ros::Time latest_time)
   
   Mat predicted_position = position_filter_.correct(position_measurement);
   Mat predicted_orientation = orientation_filter_.correct(orientation_measurement);
-
+  
   predicted_pose_.position.x = predicted_position.at<double>(0);
   predicted_pose_.position.y = predicted_position.at<double>(1);
   predicted_pose_.position.z = predicted_position.at<double>(2);
   
-  predicted_pose_.orientation.x = predicted_orientation.at<double>(0);
-  predicted_pose_.orientation.y = predicted_orientation.at<double>(1);
-  predicted_pose_.orientation.z = predicted_orientation.at<double>(2);
-  predicted_pose_.orientation.w = predicted_orientation.at<double>(3);
+  tf::Quaternion q( predicted_orientation.at<double>(0),
+                    predicted_orientation.at<double>(1),
+                    predicted_orientation.at<double>(2),
+                    predicted_orientation.at<double>(3) );
+  q.normalize();
+  tf::Vector3 v = q.getAxis();
+  tfScalar W = q.getW();
   
-  // NOTE: Re-evaluate orientation filter as quaternion estimation must be non-linear in this case.
+  predicted_pose_.orientation.x = v.m_floats[0];
+  predicted_pose_.orientation.y = v.m_floats[1];
+  predicted_pose_.orientation.z = v.m_floats[2];
+  predicted_pose_.orientation.w = W;
+  
+  // NOTE: Re-evaluate orientation filter as quaternion estimation should be non-linear in this case. Currently using a normalized linear filter instead.
 }
 
 } // namespace nxr
